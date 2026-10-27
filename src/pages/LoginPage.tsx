@@ -124,22 +124,13 @@ export default function LoginPage() {
 
           <div className="mt-8 pt-6 border-t border-white/10">
             <p className="text-xs text-gray-500 text-center mb-4 font-medium uppercase tracking-wider">{t('login.quickDemo')}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => quickLogin('admin@brewcall.com', 'admin123')}
-                className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-start group"
-              >
-                <p className="text-xs font-semibold text-amber-400 group-hover:text-amber-300">{t('landing.superAdmin')}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">{t('login.platformMgmt')}</p>
-              </button>
-              <button
-                onClick={() => quickLogin('owner@aroma.coffee', 'owner123')}
-                className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-start group"
-              >
-                <p className="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">{t('landing.shopOwner')}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Aroma Coffee House</p>
-              </button>
-            </div>
+            <button
+              onClick={() => quickLogin('owner@aroma.coffee', 'owner123')}
+              className="w-full p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-start group"
+            >
+              <p className="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">{t('landing.shopOwner')}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Aroma Coffee House</p>
+            </button>
           </div>
 
           <div className="mt-6 text-center text-sm text-gray-400">

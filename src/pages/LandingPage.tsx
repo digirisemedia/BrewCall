@@ -97,17 +97,11 @@ export default function LandingPage() {
           </div>
 
           {/* Demo Credentials */}
-          <div className="mt-12 p-4 glass rounded-2xl max-w-lg mx-auto animate-fade-in-up stagger-4">
-            <p className="text-xs text-gray-400 mb-2 font-medium">{t('landing.demoAccounts')}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div className="bg-white/5 rounded-lg p-2">
-                <span className="text-amber-400 font-semibold">{t('landing.superAdmin')}:</span>
-                <span className="text-gray-300 ml-1">admin@brewcall.com / admin123</span>
-              </div>
-              <div className="bg-white/5 rounded-lg p-2">
-                <span className="text-emerald-400 font-semibold">{t('landing.shopOwner')}:</span>
-                <span className="text-gray-300 ml-1">owner@aroma.coffee / owner123</span>
-              </div>
+          <div className="mt-12 p-4 glass rounded-2xl max-w-md mx-auto animate-fade-in-up stagger-4">
+            <p className="text-xs text-gray-400 mb-2 font-medium text-center">{t('landing.demoAccounts')}</p>
+            <div className="bg-white/5 rounded-lg p-3 text-xs">
+              <span className="text-emerald-400 font-semibold">{t('landing.shopOwner')}:</span>
+              <span className="text-gray-300 ml-1">owner@aroma.coffee / owner123</span>
             </div>
           </div>
         </div>

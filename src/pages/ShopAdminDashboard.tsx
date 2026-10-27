@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { useElapsedTime } from '../hooks/useElapsedTime';
-import { playNotificationSound, playSuccessSound } from '../utils/audio';
+import { playNotificationSound, playSuccessSound, startContinuousAlert, stopContinuousAlert } from '../utils/audio';
 import { QRCodeSVG } from 'qrcode.react';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import {
@@ -37,7 +37,24 @@ export default function ShopAdminDashboard() {
       playNotificationSound();
     }
     prevPendingCount[1](pendingRequests.length);
-  }, [pendingRequests.length]);
+    
+    // Start continuous alert when there are pending requests
+    if (pendingRequests.length > 0 && soundEnabled) {
+      startContinuousAlert();
+    } else {
+      stopContinuousAlert();
+    }
+  }, [pendingRequests.length, soundEnabled]);
+  
+  // Stop continuous alert when component unmounts or tab changes
+  useEffect(() => {
+    if (activeTab !== 'requests') {
+      stopContinuousAlert();
+    }
+    return () => {
+      stopContinuousAlert();
+    };
+  }, [activeTab]);
 
   const loadData = () => {
     if (!user?.shop_id) return;
