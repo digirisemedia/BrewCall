@@ -55,7 +55,7 @@ export default function LandingPage() {
             className="w-full h-full object-cover"
             poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%231a1a2e' width='1920' height='1080'/%3E%3C/svg%3E"
           >
-            <source src="https://cdn.pixabay.com/video/2020/07/30/45349-445518652_large.mp4" type="video/mp4" />
+            <source src="https://cdn.pixabay.com/video/2024/02/12/200260-912384743_large.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] via-transparent to-[#0a0a0f]"></div>
         </div>
