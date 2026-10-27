@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { CurrencySwitcher } from '../components/CurrencySwitcher';
 import { Coffee, Zap, Shield, Smartphone, BarChart3, QrCode, ArrowRight, Star, MapPin } from 'lucide-react';
 
 export default function LandingPage() {
-  const { t, formatPrice } = useLanguage();
+  const { t } = useLanguage();
+  const { formatPrice, convertPrice, detectedCountry } = useCurrency();
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden">
@@ -27,6 +30,7 @@ export default function LandingPage() {
           </span>
         </div>
         <div className="flex items-center gap-3 animate-fade-in-right">
+          <CurrencySwitcher />
           <LanguageSwitcher />
           <Link
             to="/login"
@@ -223,7 +227,7 @@ export default function LandingPage() {
           {[
             {
               name: t('landing.pricing.free'),
-              price: formatPrice(0),
+              price: formatPrice(convertPrice(0, 'MAD')),
               features: [
                 `1 ${t('landing.price.location')}`,
                 `5 ${t('landing.price.tables')}`,
@@ -235,7 +239,7 @@ export default function LandingPage() {
             },
             {
               name: t('landing.pricing.starter'),
-              price: formatPrice(199),
+              price: formatPrice(convertPrice(199, 'MAD')),
               features: [
                 `1 ${t('landing.price.location')}`,
                 `20 ${t('landing.price.tables')}`,
@@ -250,7 +254,7 @@ export default function LandingPage() {
             },
             {
               name: t('landing.pricing.pro'),
-              price: formatPrice(499),
+              price: formatPrice(convertPrice(499, 'MAD')),
               features: [
                 `${t('landing.price.unlimited')} ${t('landing.price.locations')}`,
                 `${t('landing.price.unlimited')} ${t('landing.price.tables')}`,

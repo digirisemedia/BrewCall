@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -36,26 +37,28 @@ function DashboardRouter() {
 
 function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/dashboard" element={<DashboardRouter />} />
-            <Route path="/customer/:shopId/:tableId" element={<CustomerView />} />
-            {/* Legacy routes for backward compat */}
-            <Route path="/table/:tableId" element={<Navigate to="/" replace />} />
-            <Route path="/staff/dashboard" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </HashRouter>
-      </AuthProvider>
-    </LanguageProvider>
+    <CurrencyProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <HashRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/dashboard" element={<DashboardRouter />} />
+              <Route path="/customer/:shopId/:tableId" element={<CustomerView />} />
+              {/* Legacy routes for backward compat */}
+              <Route path="/table/:tableId" element={<Navigate to="/" replace />} />
+              <Route path="/staff/dashboard" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </HashRouter>
+        </AuthProvider>
+      </LanguageProvider>
+    </CurrencyProvider>
   );
 }
 

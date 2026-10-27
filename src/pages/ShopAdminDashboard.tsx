@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, WalletAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { useElapsedTime } from '../hooks/useElapsedTime';
 import { playNotificationSound, playSuccessSound, startContinuousAlert, stopContinuousAlert } from '../utils/audio';
 import { QRCodeSVG } from 'qrcode.react';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { CurrencySwitcher } from '../components/CurrencySwitcher';
 import {
   LogOut, LayoutDashboard, Store, UtensilsCrossed, Grid3X3, Bell,
   Plus, Trash2, Edit3, X, Check, QrCode, Eye, EyeOff, Clock, Image,
@@ -17,7 +19,8 @@ type Tab = 'overview' | 'profile' | 'menu' | 'tables' | 'requests';
 
 export default function ShopAdminDashboard() {
   const { user, logout } = useAuth();
-  const { t, formatPrice } = useLanguage();
+  const { t } = useLanguage();
+  const { formatPrice, convertPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [shop, setShop] = useState<CoffeeShop | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -92,7 +95,8 @@ export default function ShopAdminDashboard() {
             <p className="text-[10px] text-gray-500 uppercase tracking-wider">{t('admin.shopAdmin')}</p>
           </div>
         </div>
-        <div className="mb-6">
+        <div className="mb-6 flex items-center gap-2">
+          <CurrencySwitcher />
           <LanguageSwitcher />
         </div>
 

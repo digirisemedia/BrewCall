@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { ShopAPI, AuthAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, User } from '../types';
 import { Coffee, Plus, Trash2, Users, Store, BarChart3, LogOut, Search, X, Check, TrendingUp, Award, Activity, Wallet, Bell } from 'lucide-react';
 import { RequestAPI } from '../store';
+import { CurrencySwitcher } from '../components/CurrencySwitcher';
 
 export default function SuperAdminDashboard() {
   const { user, logout } = useAuth();
+  const { formatPrice } = useCurrency();
   const [shops, setShops] = useState<CoffeeShop[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -138,7 +141,7 @@ export default function SuperAdminDashboard() {
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 w-64 bg-gray-900/50 border-r border-white/5 p-6 flex flex-col z-40">
-        <div className="flex items-center gap-3 mb-10">
+        <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
             <Coffee className="w-5 h-5 text-white" />
           </div>
@@ -146,6 +149,10 @@ export default function SuperAdminDashboard() {
             <p className="font-bold text-sm">BrewCall</p>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider">Super Admin</p>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <CurrencySwitcher />
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -232,11 +239,11 @@ export default function SuperAdminDashboard() {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-xl">
                 <span className="text-sm text-gray-300">This Month</span>
-                <span className="text-lg font-bold text-emerald-400">{totalRevenue} MAD</span>
+                <span className="text-lg font-bold text-emerald-400">{formatPrice(totalRevenue)}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-xl">
                 <span className="text-sm text-gray-300">Last Month</span>
-                <span className="text-lg font-bold text-blue-400">{Math.round(lastMonthRevenue)} MAD</span>
+                <span className="text-lg font-bold text-blue-400">{formatPrice(Math.round(lastMonthRevenue))}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-violet-500/10 rounded-xl">
                 <span className="text-sm text-gray-300">Growth</span>
@@ -263,7 +270,7 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm font-medium truncate">{shop.name}</p>
                     <p className="text-xs text-gray-400">{shop.requests_today} requests today</p>
                   </div>
-                  <span className="text-sm font-bold text-emerald-400">{shops.find(s => s.id === shop.id)?.wallet_balance || 0} MAD</span>
+                  <span className="text-sm font-bold text-emerald-400">{formatPrice(shops.find(s => s.id === shop.id)?.wallet_balance || 0)}</span>
                 </div>
               ))}
             </div>

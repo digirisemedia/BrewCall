@@ -4,11 +4,14 @@ import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { Toast } from '../components/Toast';
 import { useLanguage } from '../context/LanguageContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { CurrencySwitcher } from '../components/CurrencySwitcher';
 
 export default function CustomerView() {
   const { shopId, tableId } = useParams<{ shopId: string; tableId: string }>();
-  const { t, formatPrice, dir } = useLanguage();
+  const { t, dir } = useLanguage();
+  const { formatPrice, convertPrice } = useCurrency();
   const [shop, setShop] = useState<CoffeeShop | null>(null);
   const [table, setTable] = useState<Table | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -177,6 +180,7 @@ export default function CustomerView() {
               >
                 {t('shop.table')} {table.table_number}
               </div>
+              <CurrencySwitcher variant="light" />
               <LanguageSwitcher variant="light" />
             </div>
           </div>
