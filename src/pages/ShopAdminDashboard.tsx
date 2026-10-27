@@ -52,10 +52,10 @@ export default function ShopAdminDashboard() {
 
   const tabs = [
     { id: 'overview' as Tab, label: t('shop.overview'), icon: LayoutDashboard },
-    { id: 'profile' as Tab, label: t('shop.profile'), icon: Store },
+    { id: 'requests' as Tab, label: t('shop.requests'), icon: Bell, badge: pendingRequests.length },
     { id: 'menu' as Tab, label: t('shop.menu'), icon: UtensilsCrossed },
     { id: 'tables' as Tab, label: t('shop.tables'), icon: Grid3X3 },
-    { id: 'requests' as Tab, label: t('shop.requests'), icon: Bell, badge: pendingRequests.length },
+    { id: 'profile' as Tab, label: t('shop.profile'), icon: Store },
   ];
 
   return (
@@ -230,20 +230,29 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
 // ==========================================
 function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () => void }) {
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState(shop || {} as CoffeeShop);
+  const [form, setForm] = useState<CoffeeShop | null>(null);
 
   useEffect(() => {
-    if (shop) setForm(shop);
-  }, [shop]);
+    if (shop) {
+      setForm({ ...shop });
+    }
+  }, [shop, editing]);
 
   const handleSave = () => {
-    if (!shop) return;
+    if (!shop || !form) return;
     ShopAPI.update(shop.id, form);
     setEditing(false);
     onUpdate();
   };
 
-  if (!shop) return null;
+  const handleCancel = () => {
+    if (shop) {
+      setForm({ ...shop });
+    }
+    setEditing(false);
+  };
+
+  if (!shop || !form) return null;
 
   return (
     <div className="animate-fade-in max-w-2xl">
@@ -258,7 +267,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           </button>
         ) : (
           <div className="flex gap-2">
-            <button onClick={() => setEditing(false)} className="px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20">Cancel</button>
+            <button onClick={handleCancel} className="px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20">Cancel</button>
             <button onClick={handleSave} className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-sm font-medium">Save</button>
           </div>
         )}
@@ -302,7 +311,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
               {editing ? (
                 <input
                   value={(form as any)[field.key] || ''}
-                  onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                  onChange={(e) => setForm({ ...form, [field.key]: e.target.value } as CoffeeShop)}
                   className="input-dark"
                 />
               ) : (
@@ -317,7 +326,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           {editing ? (
             <textarea
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => setForm({ ...form, description: e.target.value } as CoffeeShop)}
               className="input-dark resize-none h-24"
             />
           ) : (
@@ -513,10 +522,49 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
           {showAddItem && (
             <div className="glass rounded-2xl p-5 mb-4 animate-fade-in">
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <input value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} className="input-dark" placeholder={t('shop.itemName')} />
-                <div className="flex gap-2">
-                  <input value={newItem.image_emoji} onChange={(e) => setNewItem({ ...newItem, image_emoji: e.target.value })} className="w-14 input-dark text-center" maxLength={2} />
-                  <input value={newItem.price} onChange={(e) => setNewItem({ ...newItem, price: e.target.value })} className="flex-1 input-dark" placeholder={t('shop.price')} type="number" step="0.01" />
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">{t('shop.itemName')}</label>
+                  <input value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} className="input-dark" placeholder="e.g., Cappuccino" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">{t('shop.price')}</label>
+                  <div className="relative">
+                    <input 
+                      value={newItem.price} 
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow only numbers and one decimal point
+                        if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                          setNewItem({ ...newItem, price: value });
+                        }
+                      }}
+                      className="input-dark pr-12" 
+                      placeholder="0.00" 
+                      type="text"
+                      inputMode="decimal"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+                      MAD
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Emoji Icon</label>
+                  <input value={newItem.image_emoji} onChange={(e) => setNewItem({ ...newItem, image_emoji: e.target.value })} className="input-dark text-center" maxLength={2} placeholder="☕" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Category</label>
+                  <select 
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="input-dark"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <input value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} className="input-dark mb-3" placeholder={t('shop.itemDesc')} />
@@ -645,7 +693,7 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
   const addTable = () => {
     if (!newTable.table_number) return;
-    TableAPI.create({
+    const newTableData = TableAPI.create({
       shop_id: shop.id,
       table_number: parseInt(newTable.table_number),
       label: newTable.label || `Table ${newTable.table_number}`,
@@ -656,6 +704,8 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
     setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
     setShowAddTable(false);
     onUpdate();
+    // Show success message with the new table
+    alert(`Table ${newTableData.table_number} created successfully! You can now view and test the QR code.`);
   };
 
   const deleteTable = (id: string) => {

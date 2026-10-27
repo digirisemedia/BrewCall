@@ -153,30 +153,32 @@ export default function CustomerView() {
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-md"
-              style={{ background: `linear-gradient(135deg, ${primaryColor}40, ${primaryColor}20)`, border: `1px solid ${primaryColor}30` }}
-            >
-              {shop.logo_emoji}
+      <header className="bg-white shadow-lg sticky top-0 z-40 border-b border-gray-100">
+        <div className="max-w-lg mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-4">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${primaryColor}40, ${primaryColor}20)`, border: `2px solid ${primaryColor}30` }}
+              >
+                {shop.logo_emoji}
+              </div>
+              <div>
+                <h1 className="font-bold text-gray-800 text-xl leading-tight">{shop.name}</h1>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {table.label} • {table.seats} {t('customer.seats')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-gray-800 text-base leading-tight">{shop.name}</h1>
-              <p className="text-xs text-gray-500">
-                {table.label} • {table.seats} {t('customer.seats')}
-              </p>
+            <div className="flex items-center gap-2">
+              <div
+                className="text-sm font-bold px-4 py-2 rounded-full shadow-sm"
+                style={{ background: `linear-gradient(135deg, ${primaryColor}20, ${primaryColor}10)`, color: primaryColor, border: `1px solid ${primaryColor}30` }}
+              >
+                {t('shop.table')} {table.table_number}
+              </div>
+              <LanguageSwitcher variant="light" />
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
-              className="text-xs font-semibold px-3 py-1 rounded-full"
-              style={{ background: `${primaryColor}15`, color: primaryColor }}
-            >
-              {t('shop.table')} {table.table_number}
-            </div>
-            <LanguageSwitcher variant="light" />
           </div>
         </div>
 
@@ -253,53 +255,53 @@ export default function CustomerView() {
 
       {/* Floating Service Panel */}
       <div className="fixed bottom-0 left-0 right-0 z-40">
-        <div className="bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-2xl">
-          <div className="max-w-lg mx-auto px-4 py-4">
+        <div className="bg-gradient-to-t from-white via-white to-white/95 backdrop-blur-lg border-t border-gray-200 shadow-2xl">
+          <div className="max-w-lg mx-auto px-4 py-5">
             {activeRequest ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: `${primaryColor}10`, border: `1px solid ${primaryColor}30` }}>
+                <div className="flex items-center gap-3 rounded-2xl px-5 py-4" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}05)`, border: `2px solid ${primaryColor}30` }}>
                   <div className="relative">
-                    <div className="w-3 h-3 rounded-full" style={{ background: primaryColor }}></div>
-                    <div className="absolute inset-0 w-3 h-3 rounded-full animate-ping" style={{ background: primaryColor }}></div>
+                    <div className="w-4 h-4 rounded-full" style={{ background: primaryColor }}></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full animate-ping" style={{ background: primaryColor }}></div>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold" style={{ color: primaryColor }}>
+                    <p className="text-base font-bold" style={{ color: primaryColor }}>
                       {activeRequest.request_type === 'waiter' && t('customer.waiterCalled')}
                       {activeRequest.request_type === 'water' && t('customer.waterRequested')}
                       {activeRequest.request_type === 'bill' && t('customer.billRequested')}
                     </p>
-                    <p className="text-xs text-gray-500">{t('customer.staffNotified')}</p>
+                    <p className="text-sm text-gray-600">{t('customer.staffNotified')}</p>
                   </div>
                 </div>
                 <button
                   onClick={handleCancel}
-                  className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-red-200"
+                  className="w-full py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-red-300/50 text-base"
                 >
                   {t('customer.cancelRequest')}
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={() => handleServiceRequest('waiter')}
-                  className="flex flex-col items-center gap-1 py-3 px-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all active:scale-[0.96] shadow-lg shadow-blue-200"
+                  className="group flex flex-col items-center gap-2 py-5 px-3 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl transition-all active:scale-[0.95] shadow-xl shadow-blue-400/40 hover:shadow-blue-500/60 hover:-translate-y-1"
                 >
-                  <span className="text-2xl">🛎️</span>
-                  <span className="text-xs font-semibold">{t('customer.waiter')}</span>
+                  <span className="text-4xl group-hover:scale-110 transition-transform">🛎️</span>
+                  <span className="text-sm font-bold">{t('customer.waiter')}</span>
                 </button>
                 <button
                   onClick={() => handleServiceRequest('water')}
-                  className="flex flex-col items-center gap-1 py-3 px-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl transition-all active:scale-[0.96] shadow-lg shadow-cyan-200"
+                  className="group flex flex-col items-center gap-2 py-5 px-3 bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-2xl transition-all active:scale-[0.95] shadow-xl shadow-cyan-400/40 hover:shadow-cyan-500/60 hover:-translate-y-1"
                 >
-                  <span className="text-2xl">💧</span>
-                  <span className="text-xs font-semibold">{t('customer.water')}</span>
+                  <span className="text-4xl group-hover:scale-110 transition-transform">💧</span>
+                  <span className="text-sm font-bold">{t('customer.water')}</span>
                 </button>
                 <button
                   onClick={() => handleServiceRequest('bill')}
-                  className="flex flex-col items-center gap-1 py-3 px-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all active:scale-[0.96] shadow-lg shadow-purple-200"
+                  className="group flex flex-col items-center gap-2 py-5 px-3 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl transition-all active:scale-[0.95] shadow-xl shadow-purple-400/40 hover:shadow-purple-500/60 hover:-translate-y-1"
                 >
-                  <span className="text-2xl">💳</span>
-                  <span className="text-xs font-semibold">{t('customer.bill')}</span>
+                  <span className="text-4xl group-hover:scale-110 transition-transform">💳</span>
+                  <span className="text-sm font-bold">{t('customer.bill')}</span>
                 </button>
               </div>
             )}
