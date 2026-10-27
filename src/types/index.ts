@@ -31,6 +31,11 @@ export interface CoffeeShop {
   is_active: boolean;
   created_at: number;
   subscription_plan: 'free' | 'starter' | 'pro';
+  // Social media links
+  google_business?: string;
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
 }
 
 export interface MenuCategory {
