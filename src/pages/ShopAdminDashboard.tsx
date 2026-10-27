@@ -347,12 +347,50 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
 // ==========================================
 function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | null; categories: MenuCategory[]; items: MenuItem[]; onUpdate: () => void }) {
   const { t, formatPrice } = useLanguage();
-  const [selectedCategory, setSelectedCategory] = useState<string>(categories[0]?.id || '');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('☕');
   const [newItem, setNewItem] = useState({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
+  const [imagePreview, setImagePreview] = useState<string>('');
+
+  // Ensure selected category is always valid
+  useEffect(() => {
+    if (categories.length > 0 && !categories.find(c => c.id === selectedCategory)) {
+      setSelectedCategory(categories[0].id);
+    }
+  }, [categories, selectedCategory]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image size must be less than 2MB');
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setNewItem({ ...newItem, image_url: base64 });
+      setImagePreview(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setNewItem({ ...newItem, image_url: '' });
+    setImagePreview('');
+  };
 
   if (!shop) return null;
 
@@ -482,11 +520,61 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
                 </div>
               </div>
               <input value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} className="input-dark mb-3" placeholder={t('shop.itemDesc')} />
+              
+              {/* Image Upload Section */}
               <div className="mb-3">
-                <label className="flex items-center gap-2 text-xs text-gray-400 mb-1">
+                <label className="flex items-center gap-2 text-xs text-gray-400 mb-2">
                   <Image className="w-3 h-3" /> {t('shop.itemImage')}
                 </label>
-                <input value={newItem.image_url} onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })} className="input-dark" placeholder={t('shop.imagePlaceholder')} />
+                
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="relative mb-3 inline-block">
+                    <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-xl object-cover border-2 border-violet-500/30" />
+                    <button
+                      type="button"
+                      onClick={clearImage}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                
+                {/* Upload Options */}
+                <div className="space-y-2">
+                  {/* File Upload */}
+                  <label className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/10 hover:border-violet-500/30 transition-all">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span className="text-sm text-gray-300">Upload Image (max 2MB)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  
+                  {/* OR divider */}
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <div className="flex-1 h-px bg-white/10"></div>
+                    <span>OR</span>
+                    <div className="flex-1 h-px bg-white/10"></div>
+                  </div>
+                  
+                  {/* URL Input */}
+                  <input
+                    value={newItem.image_url.startsWith('data:') ? '' : newItem.image_url}
+                    onChange={(e) => {
+                      setNewItem({ ...newItem, image_url: e.target.value });
+                      setImagePreview(e.target.value);
+                    }}
+                    className="input-dark"
+                    placeholder="Paste image URL..."
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-4 mb-3">
                 <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
@@ -496,7 +584,7 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
               </div>
               <div className="flex gap-2">
                 <button onClick={addItem} className="px-4 py-2 bg-violet-600 rounded-lg text-sm font-medium">{t('common.add')}</button>
-                <button onClick={() => setShowAddItem(false)} className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium">{t('common.cancel')}</button>
+                <button onClick={() => { setShowAddItem(false); clearImage(); }} className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium">{t('common.cancel')}</button>
               </div>
             </div>
           )}
@@ -655,6 +743,16 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
                 <QrCode className="w-4 h-4" /> View QR
               </button>
               <button
+                onClick={() => window.open(getQRUrl(table), '_blank')}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600/20 text-emerald-300 rounded-xl text-sm font-medium hover:bg-emerald-600/30 transition-colors"
+                title="Test this QR code"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Test
+              </button>
+              <button
                 onClick={() => deleteTable(table.id)}
                 className="p-2.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
               >
@@ -677,10 +775,10 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
       {showQR && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowQR(null)}>
           <div className="bg-gray-900 border border-white/10 rounded-3xl p-8 w-full max-w-sm animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-2">Table {showQR.table_number} - {showQR.label}</h3>
-            <p className="text-gray-400 text-sm mb-6">Scan this QR code to access the digital menu</p>
+            <h3 className="text-lg font-bold mb-2">{t('shop.qrTitle')} {showQR.table_number} - {showQR.label}</h3>
+            <p className="text-gray-400 text-sm mb-6">{t('shop.qrDesc')}</p>
             
-            <div className="bg-white rounded-2xl p-6 inline-block mb-6">
+            <div id="qr-code-container" className="bg-white rounded-2xl p-6 inline-block mb-6">
               <QRCodeSVG
                 value={getQRUrl(showQR)}
                 size={200}
@@ -693,12 +791,42 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
               <p className="text-xs text-gray-400 break-all font-mono">{getQRUrl(showQR)}</p>
             </div>
 
-            <button
-              onClick={() => setShowQR(null)}
-              className="w-full py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors"
-            >
-              Close
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const svg = document.querySelector('#qr-code-container svg');
+                  if (svg) {
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = document.createElement('img');
+                    img.onload = () => {
+                      canvas.width = img.width;
+                      canvas.height = img.height;
+                      ctx?.drawImage(img, 0, 0);
+                      const pngFile = canvas.toDataURL('image/png');
+                      const downloadLink = document.createElement('a');
+                      downloadLink.download = `qr-table-${showQR.table_number}.png`;
+                      downloadLink.href = pngFile;
+                      downloadLink.click();
+                    };
+                    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+                  }
+                }}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-violet-600 rounded-xl font-medium hover:bg-violet-700 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download
+              </button>
+              <button
+                onClick={() => setShowQR(null)}
+                className="flex-1 py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors"
+              >
+                {t('common.close')}
+              </button>
+            </div>
           </div>
         </div>
       )}

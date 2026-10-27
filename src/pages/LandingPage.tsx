@@ -45,7 +45,22 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
-        <div className="text-center max-w-4xl mx-auto">
+        {/* Background Video */}
+        <div className="absolute inset-0 overflow-hidden rounded-3xl opacity-20 pointer-events-none">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%231a1a2e' width='1920' height='1080'/%3E%3C/svg%3E"
+          >
+            <source src="https://cdn.pixabay.com/video/2020/07/30/45349-445518652_large.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] via-transparent to-[#0a0a0f]"></div>
+        </div>
+
+        <div className="text-center max-w-4xl mx-auto relative">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 mb-8 animate-fade-in-down">
             <Star className="w-4 h-4 text-amber-400" />
             <span>{t('landing.badge')}</span>

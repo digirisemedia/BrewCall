@@ -24,20 +24,52 @@ export default function CustomerView() {
   }, [shopId, tableId]);
 
   const loadData = () => {
-    if (!shopId || !tableId) return;
+    if (!shopId || !tableId) {
+      setLoading(false);
+      return;
+    }
+    
     const s = ShopAPI.getById(shopId);
-    const t = TableAPI.getById(tableId);
-    setShop(s || null);
-    setTable(t || null);
-    if (s) {
-      const cats = CategoryAPI.getByShop(shopId).filter((c) => c.is_active);
-      setCategories(cats);
-      if (cats.length > 0 && !activeCategory) {
+    const tbl = TableAPI.getById(tableId);
+    
+    // Validate shop exists and is active
+    if (!s || !s.is_active) {
+      setShop(null);
+      setTable(null);
+      setLoading(false);
+      return;
+    }
+    
+    // Validate table exists and belongs to this shop
+    if (!tbl || tbl.shop_id !== shopId) {
+      setShop(s);
+      setTable(null);
+      setLoading(false);
+      return;
+    }
+    
+    setShop(s);
+    setTable(tbl);
+    
+    // Load menu data
+    const cats = CategoryAPI.getByShop(shopId).filter((c) => c.is_active);
+    setCategories(cats);
+    
+    // Set active category to first available if not set or invalid
+    if (cats.length > 0) {
+      if (!activeCategory || !cats.find(c => c.id === activeCategory)) {
         setActiveCategory(cats[0].id);
       }
-      setItems(ItemAPI.getByShop(shopId).filter((i) => i.is_available));
-      setActiveRequest(RequestAPI.getActiveForTable(shopId, tableId));
     }
+    
+    // Load available items for this shop
+    const shopItems = ItemAPI.getByShop(shopId).filter((i) => i.is_available);
+    setItems(shopItems);
+    
+    // Check for active request
+    const activeReq = RequestAPI.getActiveForTable(shopId, tableId);
+    setActiveRequest(activeReq);
+    
     setLoading(false);
   };
 
@@ -89,10 +121,23 @@ export default function CustomerView() {
   if (!shop || !table) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" dir={dir}>
-        <div className="text-center">
-          <div className="text-5xl mb-4">😕</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">{t('customer.notFound')}</h2>
-          <p className="text-gray-500 text-sm">{t('customer.notFoundDesc')}</p>
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">{t('customer.notFound')}</h2>
+          <p className="text-gray-600 text-sm mb-6">
+            {!shop 
+              ? 'This coffee shop may have been removed or is no longer active.'
+              : !table 
+              ? 'This table does not exist or has been removed.'
+              : t('customer.notFoundDesc')
+            }
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left">
+            <p className="text-xs text-amber-800 font-semibold mb-2">Need help?</p>
+            <p className="text-xs text-amber-700">
+              Please ask a staff member for assistance or scan a QR code from your table.
+            </p>
+          </div>
         </div>
       </div>
     );
