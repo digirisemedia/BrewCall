@@ -8,14 +8,27 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { auth } from './config';
+import { auth, isFirebaseConfigured } from './config';
 
 // ==========================================
 // Firebase Authentication Service
 // ==========================================
 
+// Mock user for demo mode (when Firebase is not configured)
+interface MockUser {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+}
+
 // Google Sign-In
-export const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
+export const signInWithGoogle = async (): Promise<FirebaseUser | MockUser | null> => {
+  // If Firebase is not configured, use mock OAuth
+  if (!isFirebaseConfigured()) {
+    return mockGoogleSignIn();
+  }
+  
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
@@ -26,8 +39,29 @@ export const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
   }
 };
 
+// Mock Google Sign-In (for demo without Firebase)
+const mockGoogleSignIn = (): Promise<MockUser> => {
+  return new Promise((resolve) => {
+    // Simulate OAuth popup
+    setTimeout(() => {
+      const mockUser: MockUser = {
+        uid: `google_${Date.now()}`,
+        email: `user${Math.floor(Math.random() * 1000)}@gmail.com`,
+        displayName: 'Google User',
+        photoURL: 'https://lh3.googleusercontent.com/a/default-user',
+      };
+      resolve(mockUser);
+    }, 1500);
+  });
+};
+
 // Apple Sign-In
-export const signInWithApple = async (): Promise<FirebaseUser | null> => {
+export const signInWithApple = async (): Promise<FirebaseUser | MockUser | null> => {
+  // If Firebase is not configured, use mock OAuth
+  if (!isFirebaseConfigured()) {
+    return mockAppleSignIn();
+  }
+  
   const provider = new OAuthProvider('apple.com');
   provider.addScope('email');
   provider.addScope('name');
@@ -39,6 +73,21 @@ export const signInWithApple = async (): Promise<FirebaseUser | null> => {
     console.error('Apple sign-in error:', error);
     throw error;
   }
+};
+
+// Mock Apple Sign-In (for demo without Firebase)
+const mockAppleSignIn = (): Promise<MockUser> => {
+  return new Promise((resolve) => {
+    // Simulate OAuth popup
+    setTimeout(() => {
+      const mockUser: MockUser = {
+        uid: `apple_${Date.now()}`,
+        email: `user${Math.floor(Math.random() * 1000)}@privaterelay.appleid.com`,
+        displayName: 'Apple User',
+      };
+      resolve(mockUser);
+    }, 1500);
+  });
 };
 
 // Email/Password Sign-In

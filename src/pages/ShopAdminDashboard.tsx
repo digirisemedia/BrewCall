@@ -253,7 +253,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     if (shop) {
       setForm({ ...shop });
     }
-  }, [shop, editing]);
+  }, [shop]);
 
   const handleSave = () => {
     if (!shop || !form) return;
@@ -487,14 +487,31 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
             </div>
 
             {showAddCategory && (
-              <div className="mb-3 p-3 bg-white/5 rounded-xl space-y-2 animate-fade-in">
-                <div className="flex gap-2">
-                  <input value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} className="w-12 input-dark text-center" maxLength={2} />
-                  <input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} className="flex-1 input-dark" placeholder="Category name" />
+              <div className="mb-3 p-3 bg-white/5 rounded-xl space-y-3 animate-fade-in">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Category Name *</label>
+                  <input 
+                    value={newCatName} 
+                    onChange={(e) => setNewCatName(e.target.value)} 
+                    className="w-full input-dark" 
+                    placeholder="e.g., Hot Drinks, Pastries, etc." 
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Emoji Icon</label>
+                  <input 
+                    value={newCatIcon} 
+                    onChange={(e) => setNewCatIcon(e.target.value)} 
+                    className="w-full input-dark text-center text-2xl" 
+                    maxLength={2} 
+                    placeholder="☕"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">Paste an emoji or type one (e.g., ☕ 🥐 🍰)</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={addCategory} className="flex-1 py-1.5 bg-violet-600 rounded-lg text-xs font-medium">Add</button>
-                  <button onClick={() => setShowAddCategory(false)} className="flex-1 py-1.5 bg-white/10 rounded-lg text-xs font-medium">Cancel</button>
+                  <button onClick={addCategory} className="flex-1 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-xs font-medium transition-colors">Add Category</button>
+                  <button onClick={() => { setShowAddCategory(false); setNewCatName(''); setNewCatIcon('☕'); }} className="flex-1 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium transition-colors">Cancel</button>
                 </div>
               </div>
             )}

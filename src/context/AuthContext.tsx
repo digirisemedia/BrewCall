@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const createLocalUserFromFirebase = async (firebaseUser: FirebaseUser): Promise<User | null> => {
+  const createLocalUserFromFirebase = async (firebaseUser: FirebaseUser | any): Promise<User | null> => {
     const email = firebaseUser.email;
     if (!email) return null;
     

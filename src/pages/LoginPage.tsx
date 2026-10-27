@@ -96,9 +96,9 @@ export default function LoginPage() {
 
           {/* Firebase Status Indicator */}
           {!isFirebaseReady && (
-            <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <p className="text-amber-300 text-xs">
-                ⚠️ Firebase not configured. Using demo mode. See FIREBASE_SETUP.md for real OAuth.
+            <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <p className="text-blue-300 text-xs">
+                ℹ️ Demo mode: Google/Apple sign-in will create a demo account. Configure Firebase for production.
               </p>
             </div>
           )}
