@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { ShopAPI, AuthAPI } from '../store';
 import { Coffee, Eye, EyeOff, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -17,45 +16,32 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { register, loginWithGoogle, loginWithApple, isFirebaseReady } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const handleSocialLogin = (provider: 'google' | 'apple') => {
+  const handleSocialLogin = async (provider: 'google' | 'apple') => {
     setIsLoading(true);
     setError('');
     
-    // Simulate OAuth flow
-    setTimeout(() => {
-      const mockEmail = provider === 'google' ? 'user@gmail.com' : 'user@icloud.com';
-      const mockName = provider === 'google' ? 'Google User' : 'Apple User';
-      
-      // Check if user exists
-      if (AuthAPI.emailExists(mockEmail)) {
-        const success = login(mockEmail, 'oauth_password');
-        if (success) {
-          navigate('/dashboard');
-        } else {
-          setError(t('register.oauthError'));
-        }
+    try {
+      let success = false;
+      if (provider === 'google') {
+        success = await loginWithGoogle();
       } else {
-        // Create new account
-        const result = AuthAPI.register({
-          email: mockEmail,
-          password: 'oauth_password',
-          name: mockName,
-          shopName: `${mockName}'s Coffee Shop`,
-        });
-        
-        if ('error' in result) {
-          setError(result.error);
-        } else {
-          login(mockEmail, 'oauth_password');
-          navigate('/dashboard');
-        }
+        success = await loginWithApple();
       }
-      setIsLoading(false);
-    }, 1000);
+      
+      if (success) {
+        // Auth state observer will handle navigation
+        navigate('/dashboard');
+      } else {
+        setError(t('register.oauthError'));
+      }
+    } catch (err) {
+      setError(t('register.oauthError'));
+    }
+    setIsLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,11 +53,6 @@ export default function RegisterPage() {
       // Validate step 1
       if (!formData.name || !formData.email) {
         setError(t('register.fillRequired'));
-        setIsLoading(false);
-        return;
-      }
-      if (AuthAPI.emailExists(formData.email)) {
-        setError(t('register.emailExists'));
         setIsLoading(false);
         return;
       }
@@ -93,20 +74,17 @@ export default function RegisterPage() {
       return;
     }
 
-    await new Promise((r) => setTimeout(r, 600));
+    const success = await register(
+      formData.email,
+      formData.password,
+      formData.name,
+      formData.shopName
+    );
 
-    const result = AuthAPI.register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      shopName: formData.shopName,
-    });
-
-    if ('error' in result) {
-      setError(result.error);
-    } else {
-      login(formData.email, formData.password);
+    if (success) {
       navigate('/dashboard');
+    } else {
+      setError(t('register.emailExists'));
     }
     setIsLoading(false);
   };
@@ -138,14 +116,23 @@ export default function RegisterPage() {
             <p className="text-gray-400 text-sm mt-1">{t('register.subtitle')}</p>
           </div>
 
+          {/* Firebase Status Indicator */}
+          {!isFirebaseReady && (
+            <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+              <p className="text-amber-300 text-xs">
+                ⚠️ Firebase not configured. Using demo mode. See FIREBASE_SETUP.md for real OAuth.
+              </p>
+            </div>
+          )}
+
           {/* Social Login Buttons */}
           {step === 1 && (
             <>
               <div className="space-y-3 mb-6">
                 <button
                   onClick={() => handleSocialLogin('google')}
-                  disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 py-3 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                  disabled={isLoading || !isFirebaseReady}
+                  className="w-full flex items-center justify-center gap-3 py-3 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -158,8 +145,8 @@ export default function RegisterPage() {
 
                 <button
                   onClick={() => handleSocialLogin('apple')}
-                  disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 py-3 bg-black hover:bg-gray-900 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 border border-white/10"
+                  disabled={isLoading || !isFirebaseReady}
+                  className="w-full flex items-center justify-center gap-3 py-3 bg-black hover:bg-gray-900 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
