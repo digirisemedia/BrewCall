@@ -141,6 +141,13 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+
+          <div className="mt-6 text-center text-sm text-gray-400">
+            {t('register.haveAccount')}{' '}
+            <Link to="/register" className="text-violet-400 hover:text-violet-300 font-medium">
+              {t('register.createAccount')}
+            </Link>
+          </div>
         </div>
       </div>
     </div>

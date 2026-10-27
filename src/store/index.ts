@@ -216,6 +216,56 @@ export const AuthAPI = {
     return newUser;
   },
 
+  register(data: { email: string; password: string; name: string; shopName: string }): { user: User; shop: CoffeeShop } | { error: string } {
+    const users = get<User>(KEYS.USERS);
+    if (users.find((u) => u.email === data.email)) {
+      return { error: 'Email already registered' };
+    }
+    // Create owner user
+    const owner: User = {
+      id: genId('user'),
+      email: data.email,
+      password: data.password,
+      name: data.name,
+      role: 'shop_admin',
+      shop_id: null,
+      created_at: Date.now(),
+    };
+    const allUsers = [...users, owner];
+    localStorage.setItem(KEYS.USERS, JSON.stringify(allUsers));
+    // Create shop
+    const shop: CoffeeShop = {
+      id: genId('shop'),
+      name: data.shopName,
+      tagline: '',
+      description: '',
+      address: '',
+      phone: '',
+      email: data.email,
+      logo_emoji: '☕',
+      primary_color: '#8B4513',
+      owner_id: owner.id,
+      is_active: true,
+      created_at: Date.now(),
+      subscription_plan: 'free',
+    };
+    const shops = get<CoffeeShop>(KEYS.SHOPS);
+    shops.push(shop);
+    localStorage.setItem(KEYS.SHOPS, JSON.stringify(shops));
+    // Link shop to owner
+    owner.shop_id = shop.id;
+    const finalUsers = get<User>(KEYS.USERS).map((u) =>
+      u.id === owner.id ? { ...u, shop_id: shop.id } : u
+    );
+    localStorage.setItem(KEYS.USERS, JSON.stringify(finalUsers));
+    window.dispatchEvent(new CustomEvent('scaas-data-change', { detail: { key: 'all' } }));
+    return { user: { ...owner, shop_id: shop.id }, shop };
+  },
+
+  emailExists(email: string): boolean {
+    return get<User>(KEYS.USERS).some((u) => u.email === email);
+  },
+
   deleteUser(userId: string) {
     const users = get<User>(KEYS.USERS).filter((u) => u.id !== userId);
     set(KEYS.USERS, users);

@@ -3,6 +3,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import ShopAdminDashboard from './pages/ShopAdminDashboard';
 import CustomerView from './pages/CustomerView';
@@ -37,6 +42,11 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/dashboard" element={<DashboardRouter />} />
             <Route path="/customer/:shopId/:tableId" element={<CustomerView />} />
             {/* Legacy routes for backward compat */}
