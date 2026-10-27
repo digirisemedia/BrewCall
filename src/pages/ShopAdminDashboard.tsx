@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { useElapsedTime } from '../hooks/useElapsedTime';
 import { playNotificationSound, playSuccessSound } from '../utils/audio';
 import { QRCodeSVG } from 'qrcode.react';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import {
   LogOut, LayoutDashboard, Store, UtensilsCrossed, Grid3X3, Bell,
-  Plus, Trash2, Edit3, X, Check, QrCode, Eye, EyeOff, Clock
+  Plus, Trash2, Edit3, X, Check, QrCode, Eye, EyeOff, Clock, Image
 } from 'lucide-react';
 
 type Tab = 'overview' | 'profile' | 'menu' | 'tables' | 'requests';
 
 export default function ShopAdminDashboard() {
   const { user, logout } = useAuth();
+  const { t, formatPrice } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [shop, setShop] = useState<CoffeeShop | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -48,18 +51,18 @@ export default function ShopAdminDashboard() {
   };
 
   const tabs = [
-    { id: 'overview' as Tab, label: 'Overview', icon: LayoutDashboard },
-    { id: 'profile' as Tab, label: 'Profile', icon: Store },
-    { id: 'menu' as Tab, label: 'Menu', icon: UtensilsCrossed },
-    { id: 'tables' as Tab, label: 'Tables', icon: Grid3X3 },
-    { id: 'requests' as Tab, label: 'Live Requests', icon: Bell, badge: pendingRequests.length },
+    { id: 'overview' as Tab, label: t('shop.overview'), icon: LayoutDashboard },
+    { id: 'profile' as Tab, label: t('shop.profile'), icon: Store },
+    { id: 'menu' as Tab, label: t('shop.menu'), icon: UtensilsCrossed },
+    { id: 'tables' as Tab, label: t('shop.tables'), icon: Grid3X3 },
+    { id: 'requests' as Tab, label: t('shop.requests'), icon: Bell, badge: pendingRequests.length },
   ];
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white flex">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 w-64 bg-gray-900/50 border-r border-white/5 p-6 flex flex-col z-40 hidden lg:flex">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-4">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg"
             style={{ background: shop ? `linear-gradient(135deg, ${shop.primary_color}60, ${shop.primary_color}30)` : 'linear-gradient(135deg, #f59e0b, #d97706)' }}
@@ -67,9 +70,12 @@ export default function ShopAdminDashboard() {
             {shop?.logo_emoji || '☕'}
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-sm truncate">{shop?.name || 'Loading...'}</p>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Shop Admin</p>
+            <p className="font-bold text-sm truncate">{shop?.name || t('common.loading')}</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider">{t('admin.shopAdmin')}</p>
           </div>
+        </div>
+        <div className="mb-6">
+          <LanguageSwitcher />
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -109,7 +115,7 @@ export default function ShopAdminDashboard() {
             className="flex items-center gap-2 w-full px-4 py-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-sm"
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            {t('common.signOut')}
           </button>
         </div>
       </aside>
@@ -340,12 +346,13 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
 // Menu Tab
 // ==========================================
 function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | null; categories: MenuCategory[]; items: MenuItem[]; onUpdate: () => void }) {
+  const { t, formatPrice } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>(categories[0]?.id || '');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('☕');
-  const [newItem, setNewItem] = useState({ name: '', description: '', price: '', image_emoji: '☕', is_popular: false });
+  const [newItem, setNewItem] = useState({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
 
   if (!shop) return null;
 
@@ -368,10 +375,11 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
       description: newItem.description,
       price: parseFloat(newItem.price),
       image_emoji: newItem.image_emoji,
+      image_url: newItem.image_url || undefined,
       is_available: true,
       is_popular: newItem.is_popular,
     });
-    setNewItem({ name: '', description: '', price: '', image_emoji: '☕', is_popular: false });
+    setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
     setShowAddItem(false);
     onUpdate();
   };
@@ -467,22 +475,28 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
           {showAddItem && (
             <div className="glass rounded-2xl p-5 mb-4 animate-fade-in">
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <input value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} className="input-dark" placeholder="Item name" />
+                <input value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} className="input-dark" placeholder={t('shop.itemName')} />
                 <div className="flex gap-2">
                   <input value={newItem.image_emoji} onChange={(e) => setNewItem({ ...newItem, image_emoji: e.target.value })} className="w-14 input-dark text-center" maxLength={2} />
-                  <input value={newItem.price} onChange={(e) => setNewItem({ ...newItem, price: e.target.value })} className="flex-1 input-dark" placeholder="Price" type="number" step="0.01" />
+                  <input value={newItem.price} onChange={(e) => setNewItem({ ...newItem, price: e.target.value })} className="flex-1 input-dark" placeholder={t('shop.price')} type="number" step="0.01" />
                 </div>
               </div>
-              <input value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} className="input-dark mb-3" placeholder="Description" />
+              <input value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} className="input-dark mb-3" placeholder={t('shop.itemDesc')} />
+              <div className="mb-3">
+                <label className="flex items-center gap-2 text-xs text-gray-400 mb-1">
+                  <Image className="w-3 h-3" /> {t('shop.itemImage')}
+                </label>
+                <input value={newItem.image_url} onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })} className="input-dark" placeholder={t('shop.imagePlaceholder')} />
+              </div>
               <div className="flex items-center gap-4 mb-3">
                 <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
                   <input type="checkbox" checked={newItem.is_popular} onChange={(e) => setNewItem({ ...newItem, is_popular: e.target.checked })} className="rounded" />
-                  Popular item
+                  {t('shop.popularItem')}
                 </label>
               </div>
               <div className="flex gap-2">
-                <button onClick={addItem} className="px-4 py-2 bg-violet-600 rounded-lg text-sm font-medium">Add Item</button>
-                <button onClick={() => setShowAddItem(false)} className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium">Cancel</button>
+                <button onClick={addItem} className="px-4 py-2 bg-violet-600 rounded-lg text-sm font-medium">{t('common.add')}</button>
+                <button onClick={() => setShowAddItem(false)} className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium">{t('common.cancel')}</button>
               </div>
             </div>
           )}
@@ -490,9 +504,13 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
           <div className="space-y-3">
             {categoryItems.map((item, i) => (
               <div key={item.id} className={`glass rounded-xl p-4 flex items-center gap-4 card-hover animate-fade-in-up ${!item.is_available ? 'opacity-50' : ''}`} style={{ animationDelay: `${i * 0.05}s` }}>
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-500/20 to-orange-500/10 rounded-xl flex items-center justify-center text-2xl">
-                  {item.image_emoji}
-                </div>
+                {item.image_url ? (
+                  <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500/20 to-orange-500/10 rounded-xl flex items-center justify-center text-2xl">
+                    {item.image_emoji}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h4 className="font-semibold text-sm">{item.name}</h4>
@@ -500,7 +518,7 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
                   </div>
                   <p className="text-xs text-gray-400 truncate">{item.description}</p>
                 </div>
-                <span className="font-bold text-amber-400">${item.price.toFixed(2)}</span>
+                <span className="font-bold text-amber-400">{formatPrice(item.price)}</span>
                 <button
                   onClick={() => toggleItemAvailability(item.id, item.is_available)}
                   className={`p-2 rounded-lg transition-colors ${item.is_available ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-gray-500 hover:bg-white/5'}`}
@@ -530,6 +548,7 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
 // Tables Tab
 // ==========================================
 function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables: Table[]; onUpdate: () => void }) {
+  const { t } = useLanguage();
   const [showAddTable, setShowAddTable] = useState(false);
   const [showQR, setShowQR] = useState<Table | null>(null);
   const [newTable, setNewTable] = useState({ table_number: '', label: '', seats: '2', location: 'Indoor' });
@@ -577,20 +596,34 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
       {showAddTable && (
         <div className="glass rounded-2xl p-5 mb-6 animate-fade-in">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <input value={newTable.table_number} onChange={(e) => setNewTable({ ...newTable, table_number: e.target.value })} className="input-dark" placeholder="Table #" type="number" />
-            <input value={newTable.label} onChange={(e) => setNewTable({ ...newTable, label: e.target.value })} className="input-dark" placeholder="Label (optional)" />
-            <input value={newTable.seats} onChange={(e) => setNewTable({ ...newTable, seats: e.target.value })} className="input-dark" placeholder="Seats" type="number" />
-            <select value={newTable.location} onChange={(e) => setNewTable({ ...newTable, location: e.target.value })} className="input-dark">
-              <option value="Indoor">Indoor</option>
-              <option value="Outdoor">Outdoor</option>
-              <option value="Bar">Bar</option>
-              <option value="Patio">Patio</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.tableNumber')} *</label>
+              <input value={newTable.table_number} onChange={(e) => setNewTable({ ...newTable, table_number: e.target.value })} className="input-dark" placeholder="1, 2, 3..." type="number" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.tableLabel')}</label>
+              <input value={newTable.label} onChange={(e) => setNewTable({ ...newTable, label: e.target.value })} className="input-dark" placeholder="Window Seat, Corner Booth..." />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.seats')}</label>
+              <input value={newTable.seats} onChange={(e) => setNewTable({ ...newTable, seats: e.target.value })} className="input-dark" placeholder="2" type="number" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.location')}</label>
+              <select value={newTable.location} onChange={(e) => setNewTable({ ...newTable, location: e.target.value })} className="input-dark">
+                <option value="Indoor">{t('shop.indoor')}</option>
+                <option value="Outdoor">{t('shop.outdoor')}</option>
+                <option value="Bar">{t('shop.bar')}</option>
+                <option value="Patio">{t('shop.patio')}</option>
+              </select>
+            </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={addTable} className="px-4 py-2 bg-violet-600 rounded-lg text-sm font-medium">Add Table</button>
-            <button onClick={() => setShowAddTable(false)} className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium">Cancel</button>
+            <button onClick={addTable} className="px-4 py-2 bg-violet-600 rounded-lg text-sm font-medium">{t('common.add')}</button>
+            <button onClick={() => setShowAddTable(false)} className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium">{t('common.cancel')}</button>
           </div>
         </div>
       )}

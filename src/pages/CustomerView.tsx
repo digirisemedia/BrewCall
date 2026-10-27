@@ -3,9 +3,12 @@ import { useParams } from 'react-router-dom';
 import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { Toast } from '../components/Toast';
+import { useLanguage } from '../context/LanguageContext';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 export default function CustomerView() {
   const { shopId, tableId } = useParams<{ shopId: string; tableId: string }>();
+  const { t, formatPrice, dir } = useLanguage();
   const [shop, setShop] = useState<CoffeeShop | null>(null);
   const [table, setTable] = useState<Table | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -49,9 +52,9 @@ export default function CustomerView() {
         status: 'pending',
       });
       const messages: Record<string, string> = {
-        waiter: '🛎️ Waiter has been called! They\'ll be with you shortly.',
-        water: '💧 Water request sent! Coming right up.',
-        bill: '💳 Bill request sent! Preparing your check.',
+        waiter: t('customer.waiterToast'),
+        water: t('customer.waterToast'),
+        bill: t('customer.billToast'),
       };
       setToast({ message: messages[type], type: 'success' });
       loadData();
@@ -62,7 +65,7 @@ export default function CustomerView() {
   const handleCancel = useCallback(() => {
     if (!shopId || !tableId) return;
     RequestAPI.cancel(shopId, tableId);
-    setToast({ message: 'Request cancelled.', type: 'info' });
+    setToast({ message: t('customer.cancelToast'), type: 'info' });
     setActiveRequest(null);
   }, [shopId, tableId]);
 
@@ -77,7 +80,7 @@ export default function CustomerView() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-3 border-amber-200 border-t-amber-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500 text-sm">Loading menu...</p>
+          <p className="text-gray-500 text-sm">{t('customer.loading')}</p>
         </div>
       </div>
     );
@@ -85,11 +88,11 @@ export default function CustomerView() {
 
   if (!shop || !table) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" dir={dir}>
         <div className="text-center">
           <div className="text-5xl mb-4">😕</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Table Not Found</h2>
-          <p className="text-gray-500 text-sm">This QR code may be invalid or the table has been removed.</p>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{t('customer.notFound')}</h2>
+          <p className="text-gray-500 text-sm">{t('customer.notFoundDesc')}</p>
         </div>
       </div>
     );
@@ -117,15 +120,18 @@ export default function CustomerView() {
             <div>
               <h1 className="font-bold text-gray-800 text-base leading-tight">{shop.name}</h1>
               <p className="text-xs text-gray-500">
-                {table.label} • {table.seats} seats
+                {table.label} • {table.seats} {t('customer.seats')}
               </p>
             </div>
           </div>
-          <div
-            className="text-xs font-semibold px-3 py-1 rounded-full"
-            style={{ background: `${primaryColor}15`, color: primaryColor }}
-          >
-            Table {table.table_number}
+          <div className="flex items-center gap-2">
+            <div
+              className="text-xs font-semibold px-3 py-1 rounded-full"
+              style={{ background: `${primaryColor}15`, color: primaryColor }}
+            >
+              {t('shop.table')} {table.table_number}
+            </div>
+            <LanguageSwitcher variant="light" />
           </div>
         </div>
 
@@ -166,24 +172,28 @@ export default function CustomerView() {
                     key={item.id}
                     className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex gap-4 card-hover"
                   >
-                    <div
-                      className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                      style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}05)` }}
-                    >
-                      {item.image_emoji}
-                    </div>
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                        style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}05)` }}
+                      >
+                        {item.image_emoji}
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-gray-800 text-sm">{item.name}</h3>
                           {item.is_popular && (
                             <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
-                              ★ POPULAR
+                              {t('customer.popular')}
                             </span>
                           )}
                         </div>
                         <span className="font-bold text-sm whitespace-nowrap" style={{ color: primaryColor }}>
-                          ${item.price.toFixed(2)}
+                          {formatPrice(item.price)}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.description}</p>
@@ -209,18 +219,18 @@ export default function CustomerView() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold" style={{ color: primaryColor }}>
-                      {activeRequest.request_type === 'waiter' && '🛎️ Waiter Called'}
-                      {activeRequest.request_type === 'water' && '💧 Water Requested'}
-                      {activeRequest.request_type === 'bill' && '💳 Bill Requested'}
+                      {activeRequest.request_type === 'waiter' && t('customer.waiterCalled')}
+                      {activeRequest.request_type === 'water' && t('customer.waterRequested')}
+                      {activeRequest.request_type === 'bill' && t('customer.billRequested')}
                     </p>
-                    <p className="text-xs text-gray-500">Staff has been notified</p>
+                    <p className="text-xs text-gray-500">{t('customer.staffNotified')}</p>
                   </div>
                 </div>
                 <button
                   onClick={handleCancel}
                   className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-red-200"
                 >
-                  ✕ Cancel Request
+                  {t('customer.cancelRequest')}
                 </button>
               </div>
             ) : (
@@ -230,21 +240,21 @@ export default function CustomerView() {
                   className="flex flex-col items-center gap-1 py-3 px-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all active:scale-[0.96] shadow-lg shadow-blue-200"
                 >
                   <span className="text-2xl">🛎️</span>
-                  <span className="text-xs font-semibold">Waiter</span>
+                  <span className="text-xs font-semibold">{t('customer.waiter')}</span>
                 </button>
                 <button
                   onClick={() => handleServiceRequest('water')}
                   className="flex flex-col items-center gap-1 py-3 px-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl transition-all active:scale-[0.96] shadow-lg shadow-cyan-200"
                 >
                   <span className="text-2xl">💧</span>
-                  <span className="text-xs font-semibold">Water</span>
+                  <span className="text-xs font-semibold">{t('customer.water')}</span>
                 </button>
                 <button
                   onClick={() => handleServiceRequest('bill')}
                   className="flex flex-col items-center gap-1 py-3 px-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-all active:scale-[0.96] shadow-lg shadow-purple-200"
                 >
                   <span className="text-2xl">💳</span>
-                  <span className="text-xs font-semibold">Bill</span>
+                  <span className="text-xs font-semibold">{t('customer.bill')}</span>
                 </button>
               </div>
             )}

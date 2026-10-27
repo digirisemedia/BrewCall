@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
@@ -30,19 +31,21 @@ function DashboardRouter() {
 
 function App() {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<DashboardRouter />} />
-          <Route path="/customer/:shopId/:tableId" element={<CustomerView />} />
-          {/* Legacy routes for backward compat */}
-          <Route path="/table/:tableId" element={<Navigate to="/" replace />} />
-          <Route path="/staff/dashboard" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </HashRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={<DashboardRouter />} />
+            <Route path="/customer/:shopId/:tableId" element={<CustomerView />} />
+            {/* Legacy routes for backward compat */}
+            <Route path="/table/:tableId" element={<Navigate to="/" replace />} />
+            <Route path="/staff/dashboard" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </HashRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

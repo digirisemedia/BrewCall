@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Coffee, Zap, Shield, Smartphone, BarChart3, QrCode, ArrowRight, Star } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { Coffee, Zap, Shield, Smartphone, BarChart3, QrCode, ArrowRight, Star, MapPin } from 'lucide-react';
 
 export default function LandingPage() {
+  const { t, formatPrice } = useLanguage();
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden">
       {/* Animated Background */}
@@ -22,18 +26,19 @@ export default function LandingPage() {
             BrewCall
           </span>
         </div>
-        <div className="flex items-center gap-4 animate-fade-in-right">
+        <div className="flex items-center gap-3 animate-fade-in-right">
+          <LanguageSwitcher />
           <Link
             to="/login"
-            className="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+            className="hidden sm:block px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors"
           >
-            Sign In
+            {t('landing.signIn')}
           </Link>
           <Link
             to="/login"
             className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-semibold rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all hover:-translate-y-0.5"
           >
-            Get Started Free
+            {t('landing.getStarted')}
           </Link>
         </div>
       </nav>
@@ -43,22 +48,21 @@ export default function LandingPage() {
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 mb-8 animate-fade-in-down">
             <Star className="w-4 h-4 text-amber-400" />
-            <span>Trusted by 500+ coffee shops worldwide</span>
+            <span>{t('landing.badge')}</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-black leading-tight mb-6 animate-fade-in-up">
             <span className="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-              Smart Waiter Call
+              {t('landing.hero1')}
             </span>
             <br />
             <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent animate-gradient">
-              for Coffee Shops
+              {t('landing.hero2')}
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 animate-fade-in-up stagger-2">
-            Transform your coffee shop with QR-powered digital menus and instant service requests. 
-            No app downloads. No hardware needed. Just scan and serve.
+            {t('landing.heroDesc')}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up stagger-3">
@@ -66,27 +70,27 @@ export default function LandingPage() {
               to="/login"
               className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-2xl shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:-translate-y-1"
             >
-              Start Free Trial
+              {t('landing.cta')}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               to="/login"
               className="flex items-center gap-2 px-8 py-4 glass text-white font-semibold rounded-2xl hover:bg-white/10 transition-all"
             >
-              <span>📱</span> View Demo
+              <span>📱</span> {t('landing.demo')}
             </Link>
           </div>
 
           {/* Demo Credentials */}
           <div className="mt-12 p-4 glass rounded-2xl max-w-lg mx-auto animate-fade-in-up stagger-4">
-            <p className="text-xs text-gray-400 mb-2 font-medium">Demo Accounts</p>
+            <p className="text-xs text-gray-400 mb-2 font-medium">{t('landing.demoAccounts')}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="bg-white/5 rounded-lg p-2">
-                <span className="text-amber-400 font-semibold">Super Admin:</span>
+                <span className="text-amber-400 font-semibold">{t('landing.superAdmin')}:</span>
                 <span className="text-gray-300 ml-1">admin@brewcall.com / admin123</span>
               </div>
               <div className="bg-white/5 rounded-lg p-2">
-                <span className="text-emerald-400 font-semibold">Shop Owner:</span>
+                <span className="text-emerald-400 font-semibold">{t('landing.shopOwner')}:</span>
                 <span className="text-gray-300 ml-1">owner@aroma.coffee / owner123</span>
               </div>
             </div>
@@ -107,7 +111,7 @@ export default function LandingPage() {
                   <p className="text-[10px] text-gray-500">Table 3</p>
                 </div>
                 <div className="space-y-2">
-                  {['☕ Espresso $3.50', '🥛 Latte $4.75', '🧊 Cold Brew $5.00'].map((item, i) => (
+                  {[`☕ Espresso ${formatPrice(15)}`, `🥛 Latte ${formatPrice(28)}`, `🧊 Cold Brew ${formatPrice(30)}`].map((item, i) => (
                     <div key={i} className="bg-white rounded-lg p-2 text-xs shadow-sm">
                       {item}
                     </div>
@@ -116,15 +120,15 @@ export default function LandingPage() {
                 <div className="absolute bottom-4 left-4 right-4 grid grid-cols-3 gap-2">
                   <div className="bg-blue-500 rounded-lg p-2 text-center">
                     <span className="text-lg">🛎️</span>
-                    <p className="text-[8px] text-white font-bold">Waiter</p>
+                    <p className="text-[8px] text-white font-bold">{t('customer.waiter')}</p>
                   </div>
                   <div className="bg-cyan-500 rounded-lg p-2 text-center">
                     <span className="text-lg">💧</span>
-                    <p className="text-[8px] text-white font-bold">Water</p>
+                    <p className="text-[8px] text-white font-bold">{t('customer.water')}</p>
                   </div>
                   <div className="bg-purple-500 rounded-lg p-2 text-center">
                     <span className="text-lg">💳</span>
-                    <p className="text-[8px] text-white font-bold">Bill</p>
+                    <p className="text-[8px] text-white font-bold">{t('customer.bill')}</p>
                   </div>
                 </div>
               </div>
@@ -136,22 +140,22 @@ export default function LandingPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                <span className="text-[10px] text-gray-400 ml-3">Staff Dashboard</span>
+                <span className="text-[10px] text-gray-400 ml-3">{t('shop.dashboard')}</span>
               </div>
               <div className="p-4 space-y-3">
                 <div className="flex gap-2">
                   {['3', '1', '1', '1'].map((n, i) => (
                     <div key={i} className="flex-1 bg-gray-800 rounded-lg p-2 text-center">
                       <p className="text-lg font-bold text-white">{n}</p>
-                      <p className="text-[8px] text-gray-400">{['Pending', 'Waiter', 'Water', 'Bill'][i]}</p>
+                      <p className="text-[8px] text-gray-400">{[t('shop.pendingRequests'), t('shop.callWaiter'), t('shop.water'), t('shop.bill')][i]}</p>
                     </div>
                   ))}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[1, 2, 3].map((n) => (
                     <div key={n} className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-500/20 rounded-lg p-3">
-                      <p className="text-xs text-blue-300 font-bold">Table {n}</p>
-                      <p className="text-[10px] text-gray-400 mt-1">🛎️ Waiter</p>
+                      <p className="text-xs text-blue-300 font-bold">{t('shop.table')} {n}</p>
+                      <p className="text-[10px] text-gray-400 mt-1">🛎️ {t('shop.callWaiter')}</p>
                       <p className="text-[10px] text-gray-500">{n}m ago</p>
                     </div>
                   ))}
@@ -166,24 +170,24 @@ export default function LandingPage() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Everything You Need to{' '}
+            {t('landing.featuresTitle1')}{' '}
             <span className="bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">
-              Serve Better
+              {t('landing.featuresTitle2')}
             </span>
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto">
-            From digital menus to instant service alerts, BrewCall gives your coffee shop superpowers.
+            {t('landing.featuresDesc')}
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            { icon: QrCode, title: 'QR Code Menus', desc: 'Generate unique QR codes for each table. Customers scan to view your menu instantly.', color: 'from-violet-500 to-purple-600' },
-            { icon: Zap, title: 'Instant Alerts', desc: 'Real-time notifications when customers need service. Audio + visual alerts for staff.', color: 'from-amber-500 to-orange-600' },
-            { icon: Smartphone, title: 'No App Required', desc: 'Works on any phone browser. No downloads, no installs. Just scan and go.', color: 'from-emerald-500 to-teal-600' },
-            { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Track request patterns, peak hours, and service performance metrics.', color: 'from-blue-500 to-indigo-600' },
-            { icon: Shield, title: 'Multi-Location', desc: 'Manage multiple coffee shop locations from a single admin dashboard.', color: 'from-pink-500 to-rose-600' },
-            { icon: Coffee, title: 'Built for Coffee', desc: 'Designed specifically for coffee shops, cafes, and quick-service restaurants.', color: 'from-amber-600 to-yellow-600' },
+            { icon: QrCode, title: t('landing.feat.qr.title'), desc: t('landing.feat.qr.desc'), color: 'from-violet-500 to-purple-600' },
+            { icon: Zap, title: t('landing.feat.alert.title'), desc: t('landing.feat.alert.desc'), color: 'from-amber-500 to-orange-600' },
+            { icon: Smartphone, title: t('landing.feat.noapp.title'), desc: t('landing.feat.noapp.desc'), color: 'from-emerald-500 to-teal-600' },
+            { icon: BarChart3, title: t('landing.feat.analytics.title'), desc: t('landing.feat.analytics.desc'), color: 'from-blue-500 to-indigo-600' },
+            { icon: MapPin, title: t('landing.feat.multi.title'), desc: t('landing.feat.multi.desc'), color: 'from-pink-500 to-rose-600' },
+            { icon: Coffee, title: t('landing.feat.coffee.title'), desc: t('landing.feat.coffee.desc'), color: 'from-amber-600 to-yellow-600' },
           ].map((feature, i) => (
             <div
               key={i}
@@ -202,15 +206,53 @@ export default function LandingPage() {
       {/* Pricing Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-          <p className="text-gray-400">Start free. Upgrade when you're ready.</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('landing.pricing.title')}</h2>
+          <p className="text-gray-400">{t('landing.pricing.desc')}</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {[
-            { name: 'Free', price: '$0', period: '/mo', features: ['1 Location', '5 Tables', 'Basic Menu', 'Email Support'], cta: 'Start Free', popular: false },
-            { name: 'Starter', price: '$29', period: '/mo', features: ['1 Location', '20 Tables', 'Full Menu', 'QR Codes', 'Analytics', 'Priority Support'], cta: 'Start Trial', popular: true },
-            { name: 'Pro', price: '$79', period: '/mo', features: ['Unlimited Locations', 'Unlimited Tables', 'Custom Branding', 'API Access', 'White Label', '24/7 Support'], cta: 'Contact Sales', popular: false },
+            {
+              name: t('landing.pricing.free'),
+              price: formatPrice(0),
+              features: [
+                `1 ${t('landing.price.location')}`,
+                `5 ${t('landing.price.tables')}`,
+                t('landing.price.basicMenu'),
+                t('landing.price.emailSupport'),
+              ],
+              cta: t('landing.cta'),
+              popular: false,
+            },
+            {
+              name: t('landing.pricing.starter'),
+              price: formatPrice(199),
+              features: [
+                `1 ${t('landing.price.location')}`,
+                `20 ${t('landing.price.tables')}`,
+                t('landing.price.fullMenu'),
+                t('landing.price.qrCodes'),
+                t('landing.price.analytics'),
+                t('landing.price.imageMenu'),
+                t('landing.price.prioritySupport'),
+              ],
+              cta: t('landing.pricing.startTrial'),
+              popular: true,
+            },
+            {
+              name: t('landing.pricing.pro'),
+              price: formatPrice(499),
+              features: [
+                `${t('landing.price.unlimited')} ${t('landing.price.locations')}`,
+                `${t('landing.price.unlimited')} ${t('landing.price.tables')}`,
+                t('landing.price.customBranding'),
+                t('landing.price.apiAccess'),
+                t('landing.price.whiteLabel'),
+                t('landing.price.support247'),
+              ],
+              cta: t('landing.pricing.contact'),
+              popular: false,
+            },
           ].map((plan, i) => (
             <div
               key={i}
@@ -221,14 +263,14 @@ export default function LandingPage() {
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-bold rounded-full">
-                  MOST POPULAR
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-bold rounded-full whitespace-nowrap">
+                  {t('landing.pricing.popular')}
                 </div>
               )}
               <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-4xl font-black text-white">{plan.price}</span>
-                <span className="text-gray-400">{plan.period}</span>
+                <span className="text-gray-400">/{t('landing.price.month')}</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {plan.features.map((f, j) => (
@@ -261,7 +303,8 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-gray-400">BrewCall</span>
           </div>
-          <p className="text-gray-500 text-sm">© 2024 BrewCall. All rights reserved.</p>
+          <p className="text-gray-500 text-sm">{t('landing.footer')}</p>
+          <LanguageSwitcher />
         </div>
       </footer>
     </div>

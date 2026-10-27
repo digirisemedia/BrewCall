@@ -50,6 +50,7 @@ export interface MenuItem {
   description: string;
   price: number;
   image_emoji: string;
+  image_url?: string;
   is_available: boolean;
   is_popular: boolean;
   created_at: number;

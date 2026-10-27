@@ -129,22 +129,22 @@ export function seedInitialData() {
   ];
   set(KEYS.CATEGORIES, categories);
 
-  // Menu Items for Shop 1
+  // Menu Items for Shop 1 (Moroccan pricing in MAD)
   const items: MenuItem[] = [
-    { id: 'item_1', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Espresso', description: 'Rich double shot, our signature blend', price: 3.50, image_emoji: '☕', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_2', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Cappuccino', description: 'Espresso with velvety steamed milk foam', price: 4.50, image_emoji: '☕', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_3', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Latte', description: 'Smooth espresso with steamed milk', price: 4.75, image_emoji: '🥛', is_available: true, is_popular: false, created_at: Date.now() },
-    { id: 'item_4', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Flat White', description: 'Double ristretto with microfoam milk', price: 5.00, image_emoji: '🤍', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_5', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Mocha', description: 'Espresso, chocolate, steamed milk & whipped cream', price: 5.50, image_emoji: '🍫', is_available: true, is_popular: false, created_at: Date.now() },
-    { id: 'item_6', shop_id: 'shop_1', category_id: 'cat_1_2', name: 'Pour Over', description: 'Hand-brewed single origin, rotating selection', price: 5.00, image_emoji: '🫗', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_7', shop_id: 'shop_1', category_id: 'cat_1_2', name: 'French Press', description: 'Full-bodied immersion brew, serves 2', price: 6.00, image_emoji: '🍵', is_available: true, is_popular: false, created_at: Date.now() },
-    { id: 'item_8', shop_id: 'shop_1', category_id: 'cat_1_3', name: 'Iced Americano', description: 'Double espresso over ice with cold water', price: 4.50, image_emoji: '🧊', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_9', shop_id: 'shop_1', category_id: 'cat_1_3', name: 'Cold Brew', description: '24-hour steeped, smooth & refreshing', price: 5.00, image_emoji: '🥶', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_10', shop_id: 'shop_1', category_id: 'cat_1_4', name: 'Butter Croissant', description: 'Flaky, golden, baked fresh every morning', price: 3.75, image_emoji: '🥐', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_11', shop_id: 'shop_1', category_id: 'cat_1_4', name: 'Avocado Toast', description: 'Sourdough, smashed avo, chili flakes, seeds', price: 8.50, image_emoji: '🥑', is_available: true, is_popular: false, created_at: Date.now() },
-    { id: 'item_12', shop_id: 'shop_1', category_id: 'cat_1_4', name: 'Blueberry Muffin', description: 'Bursting with fresh blueberries, crumble top', price: 4.00, image_emoji: '🫐', is_available: true, is_popular: false, created_at: Date.now() },
-    { id: 'item_13', shop_id: 'shop_1', category_id: 'cat_1_5', name: 'Lavender Latte', description: 'Espresso, lavender syrup, oat milk', price: 6.00, image_emoji: '💜', is_available: true, is_popular: true, created_at: Date.now() },
-    { id: 'item_14', shop_id: 'shop_1', category_id: 'cat_1_5', name: 'Matcha Latte', description: 'Ceremonial grade matcha, steamed oat milk', price: 5.75, image_emoji: '🍵', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_1', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Espresso', description: 'Double shot riche, notre mélange signature', price: 15, image_emoji: '☕', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_2', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Cappuccino', description: 'Espresso avec mousse de lait veloutée', price: 25, image_emoji: '☕', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_3', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Latte', description: 'Espresso doux avec lait vapeur', price: 28, image_emoji: '🥛', is_available: true, is_popular: false, created_at: Date.now() },
+    { id: 'item_4', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Flat White', description: 'Double ristretto avec micro-mousse de lait', price: 30, image_emoji: '🤍', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_5', shop_id: 'shop_1', category_id: 'cat_1_1', name: 'Mocha', description: 'Espresso, chocolat, lait vapeur et crème fouettée', price: 35, image_emoji: '🍫', is_available: true, is_popular: false, created_at: Date.now() },
+    { id: 'item_6', shop_id: 'shop_1', category_id: 'cat_1_2', name: 'Café Filtre', description: 'Infusion manuelle d\'origine unique, sélection tournante', price: 25, image_emoji: '🫗', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_7', shop_id: 'shop_1', category_id: 'cat_1_2', name: 'Café Presse', description: 'Infusion corsée, sert 2 personnes', price: 35, image_emoji: '🍵', is_available: true, is_popular: false, created_at: Date.now() },
+    { id: 'item_8', shop_id: 'shop_1', category_id: 'cat_1_3', name: 'Americano Glacé', description: 'Double espresso sur glace avec eau froide', price: 25, image_emoji: '🧊', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_9', shop_id: 'shop_1', category_id: 'cat_1_3', name: 'Cold Brew', description: 'Infusion 24h, doux et rafraîchissant', price: 30, image_emoji: '🥶', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_10', shop_id: 'shop_1', category_id: 'cat_1_4', name: 'Croissant au Beurre', description: 'Feuilleté, doré, cuit frais chaque matin', price: 12, image_emoji: '🥐', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_11', shop_id: 'shop_1', category_id: 'cat_1_4', name: 'Toast Avocat', description: 'Pain levain, avocat écrasé, piment, graines', price: 45, image_emoji: '🥑', is_available: true, is_popular: false, created_at: Date.now() },
+    { id: 'item_12', shop_id: 'shop_1', category_id: 'cat_1_4', name: 'Muffin Myrtille', description: 'Éclatant de myrtilles fraîches, topping croustillant', price: 20, image_emoji: '🫐', is_available: true, is_popular: false, created_at: Date.now() },
+    { id: 'item_13', shop_id: 'shop_1', category_id: 'cat_1_5', name: 'Latte Lavande', description: 'Espresso, sirop de lavande, lait d\'avoine', price: 38, image_emoji: '💜', is_available: true, is_popular: true, created_at: Date.now() },
+    { id: 'item_14', shop_id: 'shop_1', category_id: 'cat_1_5', name: 'Matcha Latte', description: 'Matcha grade cérémonial, lait d\'avoine vapeur', price: 40, image_emoji: '🍵', is_available: true, is_popular: true, created_at: Date.now() },
   ];
   set(KEYS.ITEMS, items);
 
