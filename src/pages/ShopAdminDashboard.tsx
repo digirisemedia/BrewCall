@@ -251,7 +251,7 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
 // Profile Tab
 // ==========================================
 function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () => void }) {
-  const { formatPrice } = useLanguage();
+  const { formatPrice, t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CoffeeShop | null>(null);
   const [showTopUp, setShowTopUp] = useState(false);
@@ -320,17 +320,17 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     <div className="animate-fade-in max-w-2xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Shop Profile</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage your coffee shop information</p>
+          <h1 className="text-3xl font-bold">{t('shop.shopProfile')}</h1>
+          <p className="text-gray-400 text-sm mt-1">{t('shop.manageInfo')}</p>
         </div>
         {!editing ? (
           <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors">
-            <Edit3 className="w-4 h-4" /> Edit
+            <Edit3 className="w-4 h-4" /> {t('common.edit')}
           </button>
         ) : (
           <div className="flex gap-2">
-            <button onClick={handleCancel} className="px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20">Cancel</button>
-            <button onClick={handleSave} className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-sm font-medium">Save</button>
+            <button onClick={handleCancel} className="px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20">{t('common.cancel')}</button>
+            <button onClick={handleSave} className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-sm font-medium">{t('common.save')}</button>
           </div>
         )}
       </div>
@@ -362,11 +362,11 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
         {/* Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { label: 'Shop Name', key: 'name' },
-            { label: 'Tagline', key: 'tagline' },
-            { label: 'Address', key: 'address' },
-            { label: 'Phone', key: 'phone' },
-            { label: 'Email', key: 'email' },
+            { label: t('admin.shopName'), key: 'name' },
+            { label: t('admin.tagline'), key: 'tagline' },
+            { label: t('admin.address'), key: 'address' },
+            { label: t('admin.phone'), key: 'phone' },
+            { label: t('admin.shopEmail'), key: 'email' },
           ].map((field) => (
             <div key={field.key}>
               <label className="block text-xs font-medium text-gray-400 mb-1">{field.label}</label>
@@ -384,7 +384,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1">Description</label>
+          <label className="block text-xs font-medium text-gray-400 mb-1">{t('admin.description')}</label>
           {editing ? (
             <textarea
               value={form.description}
@@ -398,7 +398,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
 
         {/* Social Media Links */}
         <div className="pt-4 border-t border-white/5">
-          <h3 className="text-sm font-medium mb-4">Social Media</h3>
+          <h3 className="text-sm font-medium mb-4">{t('shop.socialMedia')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Google Business */}
             <div>
@@ -496,18 +496,18 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
         <div className="pt-4 border-t border-white/5">
           <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
             <Wallet className="w-4 h-4 text-emerald-400" />
-            Wallet & Payment
+            {t('shop.walletPayment')}
           </h3>
           
           {/* Wallet Balance */}
           <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">Current Balance</span>
+              <span className="text-sm text-gray-400">{t('shop.currentBalance')}</span>
               <button
                 onClick={() => setShowTopUp(true)}
                 className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
               >
-                + Top Up
+                + {t('shop.topUp')}
               </button>
             </div>
             <p className="text-3xl font-bold text-emerald-400">{formatPrice(shop.wallet_balance)}</p>
@@ -516,12 +516,12 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           {/* Payment Methods */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-gray-400">Payment Methods</span>
+              <span className="text-xs font-medium text-gray-400">{t('shop.paymentMethods')}</span>
               <button
                 onClick={() => setShowAddPayment(true)}
                 className="text-xs text-violet-400 hover:text-violet-300 font-medium"
               >
-                + Add Method
+                + {t('shop.addMethod')}
               </button>
             </div>
             <div className="space-y-2">
@@ -558,7 +558,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
 
           {/* Recent Transactions */}
           <div>
-            <span className="text-xs font-medium text-gray-400 mb-3 block">Recent Transactions</span>
+            <span className="text-xs font-medium text-gray-400 mb-3 block">{t('shop.recentTransactions')}</span>
             <div className="space-y-2">
               {transactions.slice(0, 5).map((txn) => (
                 <div key={txn.id} className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
@@ -593,7 +593,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
         <div className="pt-4 border-t border-white/5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Subscription Plan</p>
+              <p className="text-sm font-medium">{t('shop.subscription')}</p>
               <p className="text-xs text-gray-400 capitalize">{form.subscription_plan}</p>
             </div>
             <span className="px-3 py-1 bg-violet-500/20 text-violet-300 text-xs font-bold rounded-full uppercase">
@@ -607,10 +607,10 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
       {showTopUp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowTopUp(false)}>
           <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">Top Up Wallet</h3>
+            <h3 className="text-lg font-bold mb-4">{t('shop.topUp')}</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Amount (MAD)</label>
+                <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.amount')} ({t('currency.symbol')})</label>
                 <input
                   type="number"
                   value={topUpAmount}
@@ -636,13 +636,13 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
                   onClick={() => setShowTopUp(false)}
                   className="flex-1 py-2.5 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleTopUp}
                   className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-700 transition-all"
                 >
-                  Top Up
+                  {t('shop.topUp')}
                 </button>
               </div>
             </div>
@@ -654,7 +654,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
       {showAddPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowAddPayment(false)}>
           <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">Add Payment Method</h3>
+            <h3 className="text-lg font-bold mb-4">{t('shop.addMethod')}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">Payment Type</label>
@@ -663,14 +663,14 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
                   onChange={(e) => setNewPayment({ ...newPayment, type: e.target.value as any })}
                   className="input-dark"
                 >
-                  <option value="cash_plus">Cash Plus</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="credit_card">Credit Card</option>
-                  <option value="paypal">PayPal</option>
+                  <option value="cash_plus">{t('shop.cashPlus')}</option>
+                  <option value="bank_transfer">{t('shop.bankTransfer')}</option>
+                  <option value="credit_card">{t('shop.creditCard')}</option>
+                  <option value="paypal">{t('shop.paypal')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Label</label>
+                <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.label')}</label>
                 <input
                   value={newPayment.label}
                   onChange={(e) => setNewPayment({ ...newPayment, label: e.target.value })}
@@ -679,12 +679,12 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Details (Optional)</label>
+                <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.details')}</label>
                 <input
                   value={newPayment.details}
                   onChange={(e) => setNewPayment({ ...newPayment, details: e.target.value })}
                   className="input-dark"
-                  placeholder="Account number or email"
+                  placeholder={t('shop.accountNumber')}
                 />
               </div>
               <div className="flex gap-2">
@@ -692,13 +692,13 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
                   onClick={() => setShowAddPayment(false)}
                   className="flex-1 py-2.5 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleAddPayment}
                   className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-sm font-medium hover:from-violet-700 hover:to-indigo-700 transition-all"
                 >
-                  Add Method
+                  {t('shop.addMethod')}
                 </button>
               </div>
             </div>

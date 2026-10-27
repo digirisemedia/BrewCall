@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
 import { ShopAPI, AuthAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, User } from '../types';
 import { Coffee, Plus, Trash2, Users, Store, BarChart3, LogOut, Search, X, Check, TrendingUp, Award, Activity, Wallet, Bell } from 'lucide-react';
@@ -10,6 +11,7 @@ import { CurrencySwitcher } from '../components/CurrencySwitcher';
 export default function SuperAdminDashboard() {
   const { user, logout } = useAuth();
   const { formatPrice } = useCurrency();
+  const { t } = useLanguage();
   const [shops, setShops] = useState<CoffeeShop[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -158,15 +160,15 @@ export default function SuperAdminDashboard() {
         <nav className="flex-1 space-y-1">
           <a className="flex items-center gap-3 px-4 py-3 bg-violet-600/20 text-violet-300 rounded-xl border border-violet-500/20">
             <Store className="w-5 h-5" />
-            <span className="text-sm font-medium">Coffee Shops</span>
+            <span className="text-sm font-medium">{t('admin.coffeeShops')}</span>
           </a>
           <a className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors cursor-pointer">
             <Users className="w-5 h-5" />
-            <span className="text-sm font-medium">Users</span>
+            <span className="text-sm font-medium">{t('admin.users')}</span>
           </a>
           <a className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors cursor-pointer">
             <BarChart3 className="w-5 h-5" />
-            <span className="text-sm font-medium">Analytics</span>
+            <span className="text-sm font-medium">{t('admin.analytics')}</span>
           </a>
         </nav>
 
@@ -185,7 +187,7 @@ export default function SuperAdminDashboard() {
             className="flex items-center gap-2 w-full px-4 py-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-sm"
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            {t('common.signOut')}
           </button>
         </div>
       </aside>
@@ -195,24 +197,24 @@ export default function SuperAdminDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fade-in">
           <div>
-            <h1 className="text-3xl font-bold">Coffee Shops</h1>
-            <p className="text-gray-400 text-sm mt-1">Manage all registered coffee shops on the platform</p>
+            <h1 className="text-3xl font-bold">{t('admin.coffeeShops')}</h1>
+            <p className="text-gray-400 text-sm mt-1">{t('admin.manageShops')}</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all hover:-translate-y-0.5"
           >
             <Plus className="w-5 h-5" />
-            Add Coffee Shop
+            {t('admin.addShop')}
           </button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {[
-            { label: 'Total Shops', value: totalOwners, icon: Store, color: 'from-violet-500 to-purple-600' },
-            { label: 'Active Shops', value: activeShops, icon: Check, color: 'from-emerald-500 to-teal-600' },
-            { label: 'Total Revenue', value: '$' + (shops.length * 29).toLocaleString(), icon: BarChart3, color: 'from-amber-500 to-orange-600' },
+            { label: t('admin.totalShops'), value: totalOwners, icon: Store, color: 'from-violet-500 to-purple-600' },
+            { label: t('admin.activeShops'), value: activeShops, icon: Check, color: 'from-emerald-500 to-teal-600' },
+            { label: t('admin.totalRevenue'), value: formatPrice(totalRevenue), icon: BarChart3, color: 'from-amber-500 to-orange-600' },
           ].map((stat, i) => (
             <div key={i} className="glass rounded-2xl p-5 card-hover animate-fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
               <div className="flex items-center justify-between">
@@ -234,19 +236,19 @@ export default function SuperAdminDashboard() {
           <div className="glass rounded-2xl p-6">
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-400" />
-              Revenue Overview
+              {t('admin.revenueOverview')}
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-xl">
-                <span className="text-sm text-gray-300">This Month</span>
+                <span className="text-sm text-gray-300">{t('admin.thisMonth')}</span>
                 <span className="text-lg font-bold text-emerald-400">{formatPrice(totalRevenue)}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-xl">
-                <span className="text-sm text-gray-300">Last Month</span>
+                <span className="text-sm text-gray-300">{t('admin.lastMonth')}</span>
                 <span className="text-lg font-bold text-blue-400">{formatPrice(Math.round(lastMonthRevenue))}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-violet-500/10 rounded-xl">
-                <span className="text-sm text-gray-300">Growth</span>
+                <span className="text-sm text-gray-300">{t('admin.growth')}</span>
                 <span className={`text-lg font-bold ${growth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
                 </span>
@@ -258,7 +260,7 @@ export default function SuperAdminDashboard() {
           <div className="glass rounded-2xl p-6">
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
               <Award className="w-5 h-5 text-amber-400" />
-              Top Performing Shops
+              {t('admin.topPerforming')}
             </h3>
             <div className="space-y-3">
               {topShops.map((shop, i) => (
@@ -281,7 +283,7 @@ export default function SuperAdminDashboard() {
         <div className="glass rounded-2xl p-6 mb-8">
           <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-blue-400" />
-            Recent Activity
+            {t('admin.recentActivity')}
           </h3>
           <div className="space-y-3">
             {recentActivities.map((activity, i) => (
@@ -303,7 +305,7 @@ export default function SuperAdminDashboard() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
           <input
             type="text"
-            placeholder="Search coffee shops..."
+            placeholder={t('admin.searchShops')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
