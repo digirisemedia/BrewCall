@@ -5,6 +5,8 @@ import {
   MenuItem,
   Table,
   ServiceRequest,
+  WalletTransaction,
+  PaymentMethod,
 } from '../types';
 
 // ==========================================
@@ -17,6 +19,7 @@ const KEYS = {
   ITEMS: 'scaas_items',
   TABLES: 'scaas_tables',
   REQUESTS: 'scaas_requests',
+  TRANSACTIONS: 'scaas_transactions',
   CURRENT_USER: 'scaas_current_user',
 };
 
@@ -100,6 +103,11 @@ export function seedInitialData() {
       is_active: true,
       created_at: Date.now() - 86400000 * 30,
       subscription_plan: 'pro',
+      wallet_balance: 500,
+      payment_methods: [
+        { id: 'pm_1', type: 'cash_plus', label: 'Cash Plus', is_default: true, details: 'Account: 123456789' },
+        { id: 'pm_2', type: 'bank_transfer', label: 'Bank Transfer', is_default: false, details: 'CIH Bank: 0112345678901234' },
+      ],
     },
     {
       id: 'shop_2',
@@ -115,6 +123,10 @@ export function seedInitialData() {
       is_active: true,
       created_at: Date.now() - 86400000 * 15,
       subscription_plan: 'starter',
+      wallet_balance: 250,
+      payment_methods: [
+        { id: 'pm_3', type: 'credit_card', label: 'Credit Card', is_default: true, details: 'Visa ending in 4242' },
+      ],
     },
   ];
   set(KEYS.SHOPS, shops);
@@ -248,6 +260,8 @@ export const AuthAPI = {
       is_active: true,
       created_at: Date.now(),
       subscription_plan: 'free',
+      wallet_balance: 0,
+      payment_methods: [],
     };
     const shops = get<CoffeeShop>(KEYS.SHOPS);
     shops.push(shop);
@@ -487,6 +501,108 @@ export const RequestAPI = {
       total: reqs.length,
       resolved: reqs.filter((r) => r.status === 'resolved').length,
     };
+  },
+};
+
+// ==========================================
+// Wallet API
+// ==========================================
+export const WalletAPI = {
+  getBalance(shopId: string): number {
+    const shop = ShopAPI.getById(shopId);
+    return shop?.wallet_balance || 0;
+  },
+
+  topUp(shopId: string, amount: number, paymentMethod?: string): boolean {
+    const shops = get<CoffeeShop>(KEYS.SHOPS);
+    const idx = shops.findIndex((s) => s.id === shopId);
+    if (idx === -1 || amount <= 0) return false;
+    
+    shops[idx].wallet_balance += amount;
+    set(KEYS.SHOPS, shops);
+    
+    // Add transaction
+    const transactions = get<WalletTransaction>(KEYS.TRANSACTIONS);
+    transactions.push({
+      id: genId('txn'),
+      shop_id: shopId,
+      type: 'top_up',
+      amount,
+      description: `Wallet top-up via ${paymentMethod || 'Wallet'}`,
+      payment_method: paymentMethod as any,
+      status: 'completed',
+      created_at: Date.now(),
+    });
+    set(KEYS.TRANSACTIONS, transactions);
+    
+    return true;
+  },
+
+  deduct(shopId: string, amount: number, description: string): boolean {
+    const shops = get<CoffeeShop>(KEYS.SHOPS);
+    const idx = shops.findIndex((s) => s.id === shopId);
+    if (idx === -1 || amount <= 0 || shops[idx].wallet_balance < amount) return false;
+    
+    shops[idx].wallet_balance -= amount;
+    set(KEYS.SHOPS, shops);
+    
+    // Add transaction
+    const transactions = get<WalletTransaction>(KEYS.TRANSACTIONS);
+    transactions.push({
+      id: genId('txn'),
+      shop_id: shopId,
+      type: 'payment',
+      amount,
+      description,
+      status: 'completed',
+      created_at: Date.now(),
+    });
+    set(KEYS.TRANSACTIONS, transactions);
+    
+    return true;
+  },
+
+  getTransactions(shopId: string): WalletTransaction[] {
+    return get<WalletTransaction>(KEYS.TRANSACTIONS)
+      .filter((t) => t.shop_id === shopId)
+      .sort((a, b) => b.created_at - a.created_at);
+  },
+
+  addPaymentMethod(shopId: string, method: Omit<PaymentMethod, 'id'>): PaymentMethod {
+    const shops = get<CoffeeShop>(KEYS.SHOPS);
+    const idx = shops.findIndex((s) => s.id === shopId);
+    if (idx === -1) throw new Error('Shop not found');
+    
+    const newMethod: PaymentMethod = { ...method, id: genId('pm') };
+    shops[idx].payment_methods.push(newMethod);
+    set(KEYS.SHOPS, shops);
+    
+    return newMethod;
+  },
+
+  removePaymentMethod(shopId: string, methodId: string): boolean {
+    const shops = get<CoffeeShop>(KEYS.SHOPS);
+    const idx = shops.findIndex((s) => s.id === shopId);
+    if (idx === -1) return false;
+    
+    shops[idx].payment_methods = shops[idx].payment_methods.filter((m) => m.id !== methodId);
+    set(KEYS.SHOPS, shops);
+    
+    return true;
+  },
+
+  setDefaultPaymentMethod(shopId: string, methodId: string): boolean {
+    const shops = get<CoffeeShop>(KEYS.SHOPS);
+    const idx = shops.findIndex((s) => s.id === shopId);
+    if (idx === -1) return false;
+    
+    shops[idx].payment_methods = shops[idx].payment_methods.map((m) => ({
+      ...m,
+      is_default: m.id === methodId,
+    }));
+    set(KEYS.SHOPS, shops);
+    
+    return true;
   },
 };
 

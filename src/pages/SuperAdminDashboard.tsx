@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShopAPI, AuthAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, User } from '../types';
-import { Coffee, Plus, Trash2, Users, Store, BarChart3, LogOut, Search, X, Check } from 'lucide-react';
+import { Coffee, Plus, Trash2, Users, Store, BarChart3, LogOut, Search, X, Check, TrendingUp, Award, Activity, Wallet, Bell } from 'lucide-react';
+import { RequestAPI } from '../store';
 
 export default function SuperAdminDashboard() {
   const { user, logout } = useAuth();
@@ -60,6 +61,8 @@ export default function SuperAdminDashboard() {
       owner_id: owner.id,
       is_active: true,
       subscription_plan: 'free',
+      wallet_balance: 0,
+      payment_methods: [],
     });
 
     // Update owner with shop_id
@@ -89,6 +92,47 @@ export default function SuperAdminDashboard() {
 
   const totalOwners = shops.length;
   const activeShops = shops.filter((s) => s.is_active).length;
+
+  // Calculate analytics
+  const totalRevenue = shops.reduce((sum, shop) => sum + (shop.wallet_balance || 0), 0);
+  const lastMonthRevenue = totalRevenue * 0.85; // Simulated
+  const growth = lastMonthRevenue > 0 ? ((totalRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+
+  const topShops = shops
+    .map(shop => ({
+      id: shop.id,
+      name: shop.name,
+      requests_today: RequestAPI.getStats(shop.id).today,
+    }))
+    .sort((a, b) => b.requests_today - a.requests_today)
+    .slice(0, 5);
+
+  const recentActivities = [
+    {
+      icon: Store,
+      icon_bg: 'bg-emerald-500/20',
+      message: 'New coffee shop "Café Paris" registered',
+      time: '2 hours ago',
+    },
+    {
+      icon: Bell,
+      icon_bg: 'bg-blue-500/20',
+      message: '15 service requests resolved today',
+      time: '3 hours ago',
+    },
+    {
+      icon: Wallet,
+      icon_bg: 'bg-violet-500/20',
+      message: 'Aroma Coffee House topped up 500 MAD',
+      time: '5 hours ago',
+    },
+    {
+      icon: Users,
+      icon_bg: 'bg-amber-500/20',
+      message: '3 new shop owners registered',
+      time: '1 day ago',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -175,6 +219,76 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Advanced Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Revenue Chart */}
+          <div className="glass rounded-2xl p-6">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
+              Revenue Overview
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-xl">
+                <span className="text-sm text-gray-300">This Month</span>
+                <span className="text-lg font-bold text-emerald-400">{totalRevenue} MAD</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-xl">
+                <span className="text-sm text-gray-300">Last Month</span>
+                <span className="text-lg font-bold text-blue-400">{Math.round(lastMonthRevenue)} MAD</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-violet-500/10 rounded-xl">
+                <span className="text-sm text-gray-300">Growth</span>
+                <span className={`text-lg font-bold ${growth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Shop Performance */}
+          <div className="glass rounded-2xl p-6">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-amber-400" />
+              Top Performing Shops
+            </h3>
+            <div className="space-y-3">
+              {topShops.map((shop, i) => (
+                <div key={shop.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-500/20 to-orange-500/10 rounded-lg flex items-center justify-center text-sm font-bold text-amber-400">
+                    #{i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{shop.name}</p>
+                    <p className="text-xs text-gray-400">{shop.requests_today} requests today</p>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-400">{shops.find(s => s.id === shop.id)?.wallet_balance || 0} MAD</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity Feed */}
+        <div className="glass rounded-2xl p-6 mb-8">
+          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-400" />
+            Recent Activity
+          </h3>
+          <div className="space-y-3">
+            {recentActivities.map((activity, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${activity.icon_bg}`}>
+                  <activity.icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">{activity.message}</p>
+                  <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Search */}

@@ -144,6 +144,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       owner_id: newUser.id,
       is_active: true,
       subscription_plan: 'free',
+      wallet_balance: 0,
+      payment_methods: [],
     });
     
     // Update user with shop_id
@@ -208,6 +210,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             owner_id: newUser.id,
             is_active: true,
             subscription_plan: 'free',
+            wallet_balance: 0,
+            payment_methods: [],
           });
           
           // Update user with shop_id

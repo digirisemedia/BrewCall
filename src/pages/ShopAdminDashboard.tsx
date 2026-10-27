@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
+import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, WalletAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { useElapsedTime } from '../hooks/useElapsedTime';
 import { playNotificationSound, playSuccessSound, startContinuousAlert, stopContinuousAlert } from '../utils/audio';
@@ -9,7 +9,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import {
   LogOut, LayoutDashboard, Store, UtensilsCrossed, Grid3X3, Bell,
-  Plus, Trash2, Edit3, X, Check, QrCode, Eye, EyeOff, Clock, Image
+  Plus, Trash2, Edit3, X, Check, QrCode, Eye, EyeOff, Clock, Image,
+  Wallet, TrendingUp, TrendingDown
 } from 'lucide-react';
 
 type Tab = 'overview' | 'profile' | 'menu' | 'tables' | 'requests';
@@ -246,8 +247,17 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
 // Profile Tab
 // ==========================================
 function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () => void }) {
+  const { formatPrice } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CoffeeShop | null>(null);
+  const [showTopUp, setShowTopUp] = useState(false);
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [newPayment, setNewPayment] = useState<{ type: 'cash_plus' | 'bank_transfer' | 'credit_card' | 'paypal'; label: string; details: string }>({
+    type: 'cash_plus',
+    label: '',
+    details: '',
+  });
 
   useEffect(() => {
     if (shop) {
@@ -269,7 +279,38 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     setEditing(false);
   };
 
+  const handleTopUp = () => {
+    if (!shop || !topUpAmount) return;
+    const amount = parseFloat(topUpAmount);
+    if (amount <= 0) return;
+    
+    const defaultMethod = shop.payment_methods.find(m => m.is_default);
+    WalletAPI.topUp(shop.id, amount, defaultMethod?.type);
+    setTopUpAmount('');
+    setShowTopUp(false);
+    onUpdate();
+  };
+
+  const handleAddPayment = () => {
+    if (!shop || !newPayment.label) return;
+    WalletAPI.addPaymentMethod(shop.id, {
+      ...newPayment,
+      is_default: shop.payment_methods.length === 0,
+    });
+    setNewPayment({ type: 'cash_plus', label: '', details: '' });
+    setShowAddPayment(false);
+    onUpdate();
+  };
+
+  const handleRemovePayment = (methodId: string) => {
+    if (!shop) return;
+    WalletAPI.removePaymentMethod(shop.id, methodId);
+    onUpdate();
+  };
+
   if (!shop || !form) return null;
+
+  const transactions = WalletAPI.getTransactions(shop.id);
 
   return (
     <div className="animate-fade-in max-w-2xl">
@@ -447,6 +488,103 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           </div>
         </div>
 
+        {/* Wallet & Payment */}
+        <div className="pt-4 border-t border-white/5">
+          <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-emerald-400" />
+            Wallet & Payment
+          </h3>
+          
+          {/* Wallet Balance */}
+          <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-400">Current Balance</span>
+              <button
+                onClick={() => setShowTopUp(true)}
+                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+              >
+                + Top Up
+              </button>
+            </div>
+            <p className="text-3xl font-bold text-emerald-400">{formatPrice(shop.wallet_balance)}</p>
+          </div>
+
+          {/* Payment Methods */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-gray-400">Payment Methods</span>
+              <button
+                onClick={() => setShowAddPayment(true)}
+                className="text-xs text-violet-400 hover:text-violet-300 font-medium"
+              >
+                + Add Method
+              </button>
+            </div>
+            <div className="space-y-2">
+              {shop.payment_methods.map((method) => (
+                <div key={method.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-indigo-500/10 rounded-lg flex items-center justify-center">
+                    {method.type === 'cash_plus' && <span className="text-sm">💵</span>}
+                    {method.type === 'bank_transfer' && <span className="text-sm">🏦</span>}
+                    {method.type === 'credit_card' && <span className="text-sm">💳</span>}
+                    {method.type === 'paypal' && <span className="text-sm">🅿️</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{method.label}</p>
+                    <p className="text-xs text-gray-400 truncate">{method.details || 'No details'}</p>
+                  </div>
+                  {method.is_default && (
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
+                      DEFAULT
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleRemovePayment(method.id)}
+                    className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {shop.payment_methods.length === 0 && (
+                <p className="text-xs text-gray-500 text-center py-4">No payment methods added</p>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Transactions */}
+          <div>
+            <span className="text-xs font-medium text-gray-400 mb-3 block">Recent Transactions</span>
+            <div className="space-y-2">
+              {transactions.slice(0, 5).map((txn) => (
+                <div key={txn.id} className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
+                  <div className={`w-6 h-6 rounded flex items-center justify-center ${
+                    txn.type === 'top_up' ? 'bg-emerald-500/20' : 'bg-red-500/20'
+                  }`}>
+                    {txn.type === 'top_up' ? (
+                      <TrendingUp className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <TrendingDown className="w-3 h-3 text-red-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{txn.description}</p>
+                    <p className="text-[10px] text-gray-500">{new Date(txn.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <span className={`text-xs font-bold ${
+                    txn.type === 'top_up' ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
+                    {txn.type === 'top_up' ? '+' : '-'}{formatPrice(txn.amount)}
+                  </span>
+                </div>
+              ))}
+              {transactions.length === 0 && (
+                <p className="text-xs text-gray-500 text-center py-2">No transactions yet</p>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Subscription */}
         <div className="pt-4 border-t border-white/5">
           <div className="flex items-center justify-between">
@@ -460,6 +598,109 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           </div>
         </div>
       </div>
+
+      {/* Top-Up Modal */}
+      {showTopUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowTopUp(false)}>
+          <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-4">Top Up Wallet</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Amount (MAD)</label>
+                <input
+                  type="number"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  className="input-dark"
+                  placeholder="100"
+                  min="1"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[50, 100, 200].map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => setTopUpAmount(amount.toString())}
+                    className="py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {amount} MAD
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowTopUp(false)}
+                  className="flex-1 py-2.5 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleTopUp}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-700 transition-all"
+                >
+                  Top Up
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Payment Method Modal */}
+      {showAddPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowAddPayment(false)}>
+          <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-4">Add Payment Method</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Payment Type</label>
+                <select
+                  value={newPayment.type}
+                  onChange={(e) => setNewPayment({ ...newPayment, type: e.target.value as any })}
+                  className="input-dark"
+                >
+                  <option value="cash_plus">Cash Plus</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="credit_card">Credit Card</option>
+                  <option value="paypal">PayPal</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Label</label>
+                <input
+                  value={newPayment.label}
+                  onChange={(e) => setNewPayment({ ...newPayment, label: e.target.value })}
+                  className="input-dark"
+                  placeholder="My Cash Plus Account"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Details (Optional)</label>
+                <input
+                  value={newPayment.details}
+                  onChange={(e) => setNewPayment({ ...newPayment, details: e.target.value })}
+                  className="input-dark"
+                  placeholder="Account number or email"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAddPayment(false)}
+                  className="flex-1 py-2.5 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddPayment}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-sm font-medium hover:from-violet-700 hover:to-indigo-700 transition-all"
+                >
+                  Add Method
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

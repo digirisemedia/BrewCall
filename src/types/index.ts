@@ -36,6 +36,30 @@ export interface CoffeeShop {
   instagram?: string;
   facebook?: string;
   tiktok?: string;
+  // Payment & Wallet
+  wallet_balance: number;
+  payment_methods: PaymentMethod[];
+}
+
+export type PaymentMethodType = 'cash_plus' | 'bank_transfer' | 'credit_card' | 'paypal' | 'wallet';
+
+export interface PaymentMethod {
+  id: string;
+  type: PaymentMethodType;
+  label: string;
+  is_default: boolean;
+  details?: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  shop_id: string;
+  type: 'top_up' | 'payment' | 'refund';
+  amount: number;
+  description: string;
+  payment_method?: PaymentMethodType;
+  status: 'completed' | 'pending' | 'failed';
+  created_at: number;
 }
 
 export interface MenuCategory {
