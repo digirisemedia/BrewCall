@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '../types';
 import { AuthAPI, seedInitialData } from '../store';
+import { signInWithGoogle, signInWithApple, signInWithEmail, signUpWithEmail, signOut as firebaseSignOut, observeAuthState } from '../firebase/auth';
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  register: (email: string, password: string, name: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   loginWithGoogle: () => Promise<boolean>;
   loginWithApple: () => Promise<boolean>;
   isLoading: boolean;
@@ -23,13 +25,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Seed initial data to Firestore (if not already seeded)
         await seedInitialData();
         
-        // Get current user from localStorage (session)
-        const currentUser = AuthAPI.getCurrentUser();
-        setUser(currentUser);
+        // Listen to Firebase auth state changes
+        const unsubscribe = observeAuthState(async (firebaseUser) => {
+          if (firebaseUser) {
+            // User is logged in via Firebase
+            // Check if user exists in our database
+            let appUser = await AuthAPI.getUserByEmail(firebaseUser.email || '');
+            
+            if (!appUser) {
+              // Create new user in our database
+              appUser = await AuthAPI.createUser({
+                email: firebaseUser.email || '',
+                password: 'firebase_oauth', // Placeholder, Firebase handles auth
+                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                role: 'shop_admin',
+                shop_id: null,
+              });
+            }
+            
+            setUser(appUser);
+            localStorage.setItem('scaas_current_user', JSON.stringify(appUser));
+          } else {
+            // User is logged out
+            setUser(null);
+            localStorage.removeItem('scaas_current_user');
+          }
+          setIsLoading(false);
+        });
+        
+        return () => unsubscribe();
       } catch (error) {
         console.error('Error initializing app:', error);
-        // Continue even if seeding fails
-      } finally {
         setIsLoading(false);
       }
     };
@@ -38,55 +64,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const loggedIn = await AuthAPI.login(email, password);
-    if (loggedIn) {
-      setUser(loggedIn);
-      return true;
+    try {
+      const firebaseUser = await signInWithEmail(email, password);
+      if (firebaseUser) {
+        // Firebase auth succeeded, user will be set by observer
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   }, []);
 
-  const logout = useCallback(() => {
-    AuthAPI.logout();
-    setUser(null);
+  const register = useCallback(async (email: string, password: string, name: string): Promise<boolean> => {
+    try {
+      const firebaseUser = await signUpWithEmail(email, password, name);
+      if (firebaseUser) {
+        // Firebase auth succeeded, user will be set by observer
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await firebaseSignOut();
+      setUser(null);
+      localStorage.removeItem('scaas_current_user');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   }, []);
 
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
-    // Simulate Google OAuth
-    await new Promise((r) => setTimeout(r, 1000));
-    const mockUser: User = {
-      id: 'google_user_' + Date.now(),
-      email: 'user@gmail.com',
-      password: 'oauth',
-      name: 'Google User',
-      role: 'shop_admin',
-      shop_id: null,
-      created_at: Date.now(),
-    };
-    setUser(mockUser);
-    localStorage.setItem('scaas_current_user', JSON.stringify(mockUser));
-    return true;
+    try {
+      const firebaseUser = await signInWithGoogle();
+      if (firebaseUser) {
+        // Firebase auth succeeded, user will be set by observer
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Google login error:', error);
+      return false;
+    }
   }, []);
 
   const loginWithApple = useCallback(async (): Promise<boolean> => {
-    // Simulate Apple OAuth
-    await new Promise((r) => setTimeout(r, 1000));
-    const mockUser: User = {
-      id: 'apple_user_' + Date.now(),
-      email: 'user@icloud.com',
-      password: 'oauth',
-      name: 'Apple User',
-      role: 'shop_admin',
-      shop_id: null,
-      created_at: Date.now(),
-    };
-    setUser(mockUser);
-    localStorage.setItem('scaas_current_user', JSON.stringify(mockUser));
-    return true;
+    try {
+      const firebaseUser = await signInWithApple();
+      if (firebaseUser) {
+        // Firebase auth succeeded, user will be set by observer
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Apple login error:', error);
+      return false;
+    }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loginWithGoogle, loginWithApple, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loginWithGoogle, loginWithApple, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

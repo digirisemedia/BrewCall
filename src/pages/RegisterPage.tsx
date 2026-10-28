@@ -16,7 +16,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithGoogle, loginWithApple } = useAuth();
+  const { register, loginWithGoogle, loginWithApple } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -71,8 +71,21 @@ export default function RegisterPage() {
       return;
     }
 
-    await new Promise((r) => setTimeout(r, 600));
-    navigate('/dashboard');
+    try {
+      // Register user with Firebase
+      const success = await register(formData.email, formData.password, formData.name);
+      
+      if (success) {
+        // User registered successfully, redirect to dashboard
+        // Note: User will need to verify email before full access
+        navigate('/dashboard');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.');
+    }
+    
     setIsLoading(false);
   };
 

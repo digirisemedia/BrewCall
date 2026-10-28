@@ -20,12 +20,26 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
     
-    const success = await login(email, password);
-    if (success) {
-      navigate('/dashboard');
-    } else {
-      setError(t('login.invalid'));
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        setError(t('login.invalid'));
+      }
+    } catch (err: any) {
+      // Handle Firebase auth errors
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError(err.message || t('login.invalid'));
+      }
     }
+    
     setIsLoading(false);
   };
 

@@ -171,6 +171,20 @@ export const AuthAPI = {
     }
   },
 
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const q = query(collection(db, 'users'), where('email', '==', email));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) return null;
+      
+      return fromFirestore<User>(snapshot.docs[0].data(), snapshot.docs[0].id);
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
+    }
+  },
+
   async getAllUsers(): Promise<User[]> {
     try {
       const snapshot = await getDocs(collection(db, 'users'));

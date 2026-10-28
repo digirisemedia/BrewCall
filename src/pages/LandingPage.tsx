@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { Coffee, ArrowRight } from 'lucide-react';
+import { Coffee, ArrowRight, Zap, Shield, Smartphone, BarChart3, QrCode, Star, MapPin } from 'lucide-react';
 
 export default function LandingPage() {
   const { t } = useLanguage();
@@ -42,6 +42,11 @@ export default function LandingPage() {
 
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
         <div className="text-center max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 mb-8 animate-fade-in-down">
+            <Star className="w-4 h-4 text-amber-400" />
+            <span>Trusted by 500+ coffee shops worldwide</span>
+          </div>
+
           <h1 className="text-5xl md:text-7xl font-black leading-tight mb-6 animate-fade-in-up">
             <span className="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
               Smart Waiter Call
@@ -53,7 +58,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 animate-fade-in-up stagger-2">
-            Transform your coffee shop with QR-powered digital menus and instant service requests.
+            Transform your coffee shop with QR-powered digital menus and instant service requests. No app downloads. No hardware needed. Just scan and serve.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up stagger-3">
@@ -71,8 +76,121 @@ export default function LandingPage() {
               <span>📱</span> View Demo
             </Link>
           </div>
+
+          <div className="mt-12 p-4 glass rounded-2xl max-w-md mx-auto animate-fade-in-up stagger-4">
+            <p className="text-xs text-gray-400 mb-2 font-medium text-center">Demo Accounts</p>
+            <div className="bg-white/5 rounded-lg p-3 text-xs">
+              <span className="text-emerald-400 font-semibold">Shop Owner:</span>
+              <span className="text-gray-300 ml-1">owner@aroma.coffee / owner123</span>
+            </div>
+          </div>
         </div>
       </section>
+
+      <section className="relative z-10 max-w-7xl mx-auto px-6 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Everything You Need to{' '}
+            <span className="bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">
+              Serve Better
+            </span>
+          </h2>
+          <p className="text-gray-400 max-w-xl mx-auto">
+            From digital menus to instant service alerts, BrewCall gives your coffee shop superpowers.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            { icon: QrCode, title: 'QR Code Menus', desc: 'Generate unique QR codes for each table. Customers scan to view your menu instantly.', color: 'from-violet-500 to-purple-600' },
+            { icon: Zap, title: 'Instant Alerts', desc: 'Real-time notifications when customers need service. Audio + visual alerts for staff.', color: 'from-amber-500 to-orange-600' },
+            { icon: Smartphone, title: 'No App Required', desc: 'Works on any phone browser. No downloads, no installs. Just scan and go.', color: 'from-emerald-500 to-teal-600' },
+            { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Track request patterns, peak hours, and service performance metrics.', color: 'from-blue-500 to-indigo-600' },
+            { icon: MapPin, title: 'Multi-Location', desc: 'Manage multiple coffee shop locations from a single admin dashboard.', color: 'from-pink-500 to-rose-600' },
+            { icon: Coffee, title: 'Built for Coffee', desc: 'Designed specifically for coffee shops, cafes, and quick-service restaurants.', color: 'from-amber-600 to-yellow-600' },
+          ].map((feature, i) => (
+            <div
+              key={i}
+              className={`group p-6 glass rounded-2xl card-hover animate-fade-in-up stagger-${Math.min(i + 1, 6)}`}
+            >
+              <div className={`w-12 h-12 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                <feature.icon className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 max-w-7xl mx-auto px-6 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+          <p className="text-gray-400">Start free. Upgrade when you're ready.</p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {[
+            { name: 'Free', price: '$0', period: '/mo', features: ['1 Location', '5 Tables', 'Basic Menu', 'Email Support'], cta: 'Start Free', popular: false },
+            { name: 'Starter', price: '$29', period: '/mo', features: ['1 Location', '20 Tables', 'Full Menu', 'QR Codes', 'Analytics', 'Priority Support'], cta: 'Start Trial', popular: true },
+            { name: 'Pro', price: '$79', period: '/mo', features: ['Unlimited Locations', 'Unlimited Tables', 'Custom Branding', 'API Access', 'White Label', '24/7 Support'], cta: 'Contact Sales', popular: false },
+          ].map((plan, i) => (
+            <div
+              key={i}
+              className={`relative p-8 rounded-2xl card-hover ${
+                plan.popular
+                  ? 'bg-gradient-to-b from-violet-600/20 to-indigo-600/10 border-2 border-violet-500/30'
+                  : 'glass'
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-bold rounded-full">
+                  MOST POPULAR
+                </div>
+              )}
+              <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">{plan.price}</span>
+                <span className="text-gray-400">{plan.period}</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {plan.features.map((f, j) => (
+                  <li key={j} className="flex items-center gap-2 text-sm text-gray-300">
+                    <span className="text-emerald-400">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/register"
+                className={`block text-center py-3 rounded-xl font-semibold transition-all ${
+                  plan.popular
+                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                }`}
+              >
+                {plan.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-white/5 py-12">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg flex items-center justify-center">
+              <Coffee className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-bold text-gray-400">BrewCall</span>
+          </div>
+          <p className="text-gray-500 text-sm">© 2024 BrewCall. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms</Link>
+            <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy</Link>
+            <Link to="/contact" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
