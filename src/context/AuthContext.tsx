@@ -41,6 +41,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 role: 'shop_admin',
                 shop_id: null,
               });
+              
+              // Automatically create a shop for the new user
+              const { ShopAPI } = await import('../store');
+              const newShop = await ShopAPI.create({
+                name: `${appUser.name}'s Coffee Shop`,
+                tagline: 'Welcome to our coffee shop!',
+                description: '',
+                address: '',
+                phone: '',
+                email: appUser.email,
+                logo_emoji: '☕',
+                primary_color: '#8B4513',
+                owner_id: appUser.id,
+                is_active: true,
+                subscription_plan: 'free',
+                wallet_balance: 0,
+                payment_methods: [],
+              });
+              
+              // Update user with shop_id
+              appUser = { ...appUser, shop_id: newShop.id };
+              await AuthAPI.updateUser(appUser.id, { shop_id: newShop.id });
             }
             
             setUser(appUser);

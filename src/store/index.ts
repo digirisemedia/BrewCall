@@ -209,6 +209,15 @@ export const AuthAPI = {
       throw error;
     }
   },
+
+  async updateUser(id: string, data: Partial<User>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'users', id), toFirestore(data));
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  },
 };
 
 // Shop API

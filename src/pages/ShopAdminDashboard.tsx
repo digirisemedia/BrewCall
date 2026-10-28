@@ -31,11 +31,27 @@ export default function ShopAdminDashboard() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const prevPendingCount = useState(0);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 2000); // Poll every 2 seconds for real-time updates
+    const init = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await loadData();
+      } catch (err) {
+        console.error('Failed to load data:', err);
+        setError('Failed to load data. Please refresh the page.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    init();
+    const interval = setInterval(loadData, 3000); // Poll every 3 seconds for real-time updates
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.shop_id]);
 
   useEffect(() => {
     if (pendingRequests.length > prevPendingCount[0] && soundEnabled && activeTab === 'requests') {
@@ -62,28 +78,40 @@ export default function ShopAdminDashboard() {
   }, [activeTab]);
 
   const loadData = async () => {
-    if (!user?.shop_id) return;
+    if (!user?.shop_id) {
+      console.warn('No shop_id found for user');
+      return;
+    }
     
     try {
+      console.log('Loading data for shop:', user.shop_id);
+      
       const s = await ShopAPI.getById(user.shop_id);
+      console.log('Shop loaded:', s);
       setShop(s || null);
       
       const cats = await CategoryAPI.getByShop(user.shop_id);
+      console.log('Categories loaded:', cats.length);
       setCategories(cats);
       
       const its = await ItemAPI.getByShop(user.shop_id);
+      console.log('Items loaded:', its.length);
       setItems(its);
       
       const tbls = await TableAPI.getByShop(user.shop_id);
+      console.log('Tables loaded:', tbls.length);
       setTables(tbls);
       
       const reqs = await RequestAPI.getByShop(user.shop_id);
+      console.log('Requests loaded:', reqs.length);
       setRequests(reqs);
       
       const pending = await RequestAPI.getPendingByShop(user.shop_id);
+      console.log('Pending requests:', pending.length);
       setPendingRequests(pending);
     } catch (error) {
-      console.error('Error loading ', error);
+      console.error('Error loading data:', error);
+      throw error;
     }
   };
 
@@ -94,6 +122,35 @@ export default function ShopAdminDashboard() {
     { id: 'tables' as Tab, label: t('shop.tables'), icon: Grid3X3 },
     { id: 'profile' as Tab, label: t('shop.profile'), icon: Store },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center p-4">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 max-w-md text-center">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-red-400 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-violet-600 hover:bg-violet-700 rounded-xl font-semibold transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white flex">
