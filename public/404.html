@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found - BrewCall</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    .container {
+      max-width: 600px;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 72px;
+      margin: 0;
+      font-weight: 700;
+    }
+    h2 {
+      font-size: 24px;
+      margin: 20px 0;
+      font-weight: 500;
+    }
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 20px 0;
+      opacity: 0.9;
+    }
+    a {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 15px 40px;
+      background: white;
+      color: #667eea;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+  </style>
+  <script>
+    // Redirect to home with hash routing
+    setTimeout(function() {
+      window.location.href = '/#/';
+    }, 3000);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>404</h1>
+    <h2>Page Not Found</h2>
+    <p>Oops! The page you're looking for doesn't exist.</p>
+    <p>You'll be redirected to the home page in 3 seconds...</p>
+    <a href="/#/">Go to Home Page</a>
+  </div>
+</body>
+</html>
