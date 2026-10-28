@@ -7,6 +7,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   sendEmailVerification,
+  updateProfile,
   User
 } from 'firebase/auth';
 import { auth } from './config';
@@ -39,7 +40,7 @@ export function useFirebaseAuth() {
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    await result.user.updateProfile({ displayName });
+    await updateProfile(result.user, { displayName });
     await sendEmailVerification(result.user);
     return result.user;
   };
