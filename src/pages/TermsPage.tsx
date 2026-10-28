@@ -30,12 +30,12 @@ export default function TermsPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
             {t('footer.terms')}
           </h1>
-          <p className="text-gray-400 text-sm mb-8">Last updated: January 2024</p>
+          <p className="text-gray-400 text-sm mb-8">Last updated: January 2024 | Effective in the Kingdom of Morocco</p>
 
           <div className="prose prose-invert max-w-none space-y-6 text-gray-300 text-sm leading-relaxed">
             <section>
               <h2 className="text-xl font-bold text-white mb-3">1. Acceptance of Terms</h2>
-              <p>By accessing and using BrewCall ("Service"), you accept and agree to be bound by the terms and provision of this agreement. This Service is provided by BrewCall for use by coffee shop owners and operators ("Users").</p>
+              <p>By accessing and using BrewCall ("Service"), you accept and agree to be bound by the terms and provision of this agreement. This Service is provided by BrewCall, registered in the Kingdom of Morocco, for use by coffee shop owners and operators ("Users"). By using this service, you comply with Moroccan law n° 09-08 relating to the protection of individuals with regard to the processing of personal data.</p>
             </section>
 
             <section>

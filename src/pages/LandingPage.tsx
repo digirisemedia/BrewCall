@@ -41,7 +41,22 @@ export default function LandingPage() {
       </nav>
 
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
-        <div className="text-center max-w-4xl mx-auto">
+        {/* Background Video */}
+        <div className="absolute inset-0 overflow-hidden rounded-3xl opacity-20 pointer-events-none">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            poster="image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%231a1a2e' width='1920' height='1080'/%3E%3C/svg%3E"
+          >
+            <source src="https://pixabay.com/videos/download/video-181546_medium.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] via-transparent to-[#0a0a0f]"></div>
+        </div>
+
+        <div className="text-center max-w-4xl mx-auto relative">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 mb-8 animate-fade-in-down">
             <Star className="w-4 h-4 text-amber-400" />
             <span>Trusted by 500+ coffee shops worldwide</span>
@@ -175,19 +190,68 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/5 py-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg flex items-center justify-center">
-              <Coffee className="w-4 h-4 text-white" />
+      <footer className="relative z-10 border-t border-white/5 py-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            {/* Brand */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <Coffee className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-amber-200 to-orange-300 bg-clip-text text-transparent">
+                  BrewCall
+                </span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                Smart waiter call system for modern coffee shops. Transform your service with QR-powered digital menus.
+              </p>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <MapPin className="w-3 h-3" />
+                <span>Agdal, Rabat, Morocco</span>
+              </div>
             </div>
-            <span className="font-bold text-gray-400">BrewCall</span>
+
+            {/* Product */}
+            <div>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Product</h4>
+              <ul className="space-y-3">
+                <li><a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">Features</a></li>
+                <li><a href="#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</a></li>
+                <li><Link to="/login" className="text-gray-400 hover:text-white text-sm transition-colors">Live Demo</Link></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Company</h4>
+              <ul className="space-y-3">
+                <li><Link to="/about" className="text-gray-400 hover:text-white text-sm transition-colors">About Us</Link></li>
+                <li><Link to="/contact" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Legal</h4>
+              <ul className="space-y-3">
+                <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms & Conditions</Link></li>
+                <li><Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Use</Link></li>
+              </ul>
+            </div>
           </div>
-          <p className="text-gray-500 text-sm">© 2024 BrewCall. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms</Link>
-            <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy</Link>
-            <Link to="/contact" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</Link>
+
+          {/* Bottom bar */}
+          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-gray-500 text-sm">© 2024 BrewCall. All rights reserved.</p>
+            <div className="flex items-center gap-4">
+              <a href="mailto:contact@brewcallapp.com" className="text-gray-400 hover:text-white text-sm transition-colors">
+                contact@brewcallapp.com
+              </a>
+              <span className="text-gray-600">•</span>
+              <span className="text-gray-500 text-sm">Made with ❤️ in Morocco</span>
+            </div>
           </div>
         </div>
       </footer>
