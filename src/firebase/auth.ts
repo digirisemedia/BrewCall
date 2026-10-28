@@ -1,34 +1,23 @@
-import {
-  GoogleAuthProvider,
-  OAuthProvider,
-  signInWithPopup,
+import { 
+  GoogleAuthProvider, 
+  signInWithPopup, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   User as FirebaseUser,
+  updateProfile
 } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from './config';
+import { auth } from './config';
 
 // ==========================================
 // Firebase Authentication Service
 // ==========================================
 
-// Mock user for demo mode (when Firebase is not configured)
-interface MockUser {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoURL?: string;
-}
-
 // Google Sign-In
-export const signInWithGoogle = async (): Promise<FirebaseUser | MockUser | null> => {
-  // If Firebase is not configured, use mock OAuth
-  if (!isFirebaseConfigured()) {
-    return mockGoogleSignIn();
-  }
-  
+export const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
@@ -39,33 +28,11 @@ export const signInWithGoogle = async (): Promise<FirebaseUser | MockUser | null
   }
 };
 
-// Mock Google Sign-In (for demo without Firebase)
-const mockGoogleSignIn = (): Promise<MockUser> => {
-  return new Promise((resolve) => {
-    // Simulate OAuth popup
-    setTimeout(() => {
-      const mockUser: MockUser = {
-        uid: `google_${Date.now()}`,
-        email: `user${Math.floor(Math.random() * 1000)}@gmail.com`,
-        displayName: 'Google User',
-        photoURL: 'https://lh3.googleusercontent.com/a/default-user',
-      };
-      resolve(mockUser);
-    }, 1500);
-  });
-};
-
-// Apple Sign-In
-export const signInWithApple = async (): Promise<FirebaseUser | MockUser | null> => {
-  // If Firebase is not configured, use mock OAuth
-  if (!isFirebaseConfigured()) {
-    return mockAppleSignIn();
-  }
-  
-  const provider = new OAuthProvider('apple.com');
-  provider.addScope('email');
-  provider.addScope('name');
-  
+// Apple Sign-In (requires Firebase configuration)
+export const signInWithApple = async (): Promise<FirebaseUser | null> => {
+  // Note: Apple Sign-In requires additional Firebase configuration
+  // See FIREBASE_SETUP.md for details
+  const provider = new GoogleAuthProvider(); // Placeholder - replace with Apple provider
   try {
     const result = await signInWithPopup(auth, provider);
     return result.user;
@@ -75,25 +42,16 @@ export const signInWithApple = async (): Promise<FirebaseUser | MockUser | null>
   }
 };
 
-// Mock Apple Sign-In (for demo without Firebase)
-const mockAppleSignIn = (): Promise<MockUser> => {
-  return new Promise((resolve) => {
-    // Simulate OAuth popup
-    setTimeout(() => {
-      const mockUser: MockUser = {
-        uid: `apple_${Date.now()}`,
-        email: `user${Math.floor(Math.random() * 1000)}@privaterelay.appleid.com`,
-        displayName: 'Apple User',
-      };
-      resolve(mockUser);
-    }, 1500);
-  });
-};
-
 // Email/Password Sign-In
 export const signInWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Check if email is verified
+    if (!result.user.emailVerified) {
+      throw new Error('Please verify your email before signing in');
+    }
+    
     return result.user;
   } catch (error) {
     console.error('Email sign-in error:', error);
@@ -102,12 +60,43 @@ export const signInWithEmail = async (email: string, password: string): Promise<
 };
 
 // Email/Password Sign-Up
-export const signUpWithEmail = async (email: string, password: string): Promise<FirebaseUser | null> => {
+export const signUpWithEmail = async (
+  email: string, 
+  password: string, 
+  displayName: string
+): Promise<FirebaseUser | null> => {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // Update display name
+    await updateProfile(result.user, { displayName });
+    
+    // Send verification email
+    await sendEmailVerification(result.user);
+    
     return result.user;
   } catch (error) {
     console.error('Email sign-up error:', error);
+    throw error;
+  }
+};
+
+// Send Verification Email
+export const resendVerificationEmail = async (user: FirebaseUser): Promise<void> => {
+  try {
+    await sendEmailVerification(user);
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    throw error;
+  }
+};
+
+// Send Password Reset Email
+export const sendPasswordReset = async (email: string): Promise<void> => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error('Password reset error:', error);
     throw error;
   }
 };
