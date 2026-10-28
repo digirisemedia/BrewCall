@@ -32,7 +32,7 @@ function fromFirestore<T>(docData: any, id: string): T {
 }
 
 // Convert app type to Firestore document
-function toFirestore<T extends Record<string, any>>(data: T): any {
+function toFirestore(data: any): any {
   const doc = { ...data };
   // Convert timestamps to Firestore format
   if (doc.created_at && typeof doc.created_at === 'number') {

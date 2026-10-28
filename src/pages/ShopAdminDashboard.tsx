@@ -33,7 +33,8 @@ export default function ShopAdminDashboard() {
 
   useEffect(() => {
     loadData();
-    return subscribeToChanges(loadData);
+    const interval = setInterval(loadData, 2000); // Poll every 2 seconds for real-time updates
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -60,15 +61,30 @@ export default function ShopAdminDashboard() {
     };
   }, [activeTab]);
 
-  const loadData = () => {
+  const loadData = async () => {
     if (!user?.shop_id) return;
-    const s = ShopAPI.getById(user.shop_id);
-    setShop(s || null);
-    setCategories(CategoryAPI.getByShop(user.shop_id));
-    setItems(ItemAPI.getByShop(user.shop_id));
-    setTables(TableAPI.getByShop(user.shop_id));
-    setRequests(RequestAPI.getByShop(user.shop_id));
-    setPendingRequests(RequestAPI.getPendingByShop(user.shop_id));
+    
+    try {
+      const s = await ShopAPI.getById(user.shop_id);
+      setShop(s || null);
+      
+      const cats = await CategoryAPI.getByShop(user.shop_id);
+      setCategories(cats);
+      
+      const its = await ItemAPI.getByShop(user.shop_id);
+      setItems(its);
+      
+      const tbls = await TableAPI.getByShop(user.shop_id);
+      setTables(tbls);
+      
+      const reqs = await RequestAPI.getByShop(user.shop_id);
+      setRequests(reqs);
+      
+      const pending = await RequestAPI.getPendingByShop(user.shop_id);
+      setPendingRequests(pending);
+    } catch (error) {
+      console.error('Error loading ', error);
+    }
   };
 
   const tabs = [
@@ -190,7 +206,19 @@ export default function ShopAdminDashboard() {
 // Overview Tab
 // ==========================================
 function OverviewTab({ shop, categories, items, tables, requests, pendingRequests }: any) {
-  const stats = shop ? RequestAPI.getStats(shop.id) : { pending: 0, today: 0, total: 0, resolved: 0 };
+  const [stats, setStats] = useState({ pending: 0, today: 0, total: 0, resolved: 0 });
+  
+  useEffect(() => {
+    const loadStats = async () => {
+      if (shop) {
+        const s = await RequestAPI.getStats(shop.id);
+        setStats(s);
+      }
+    };
+    loadStats();
+    const interval = setInterval(loadStats, 2000);
+    return () => clearInterval(interval);
+  }, [shop]);
 
   return (
     <div className="animate-fade-in">
@@ -257,6 +285,7 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
   const [showTopUp, setShowTopUp] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [newPayment, setNewPayment] = useState<{ type: 'cash_plus' | 'bank_transfer' | 'credit_card' | 'paypal'; label: string; details: string }>({
     type: 'cash_plus',
     label: '',
@@ -266,8 +295,19 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
   useEffect(() => {
     if (shop) {
       setForm({ ...shop });
+      loadTransactions();
     }
   }, [shop]);
+
+  const loadTransactions = async () => {
+    if (!shop) return;
+    try {
+      const txns = await WalletAPI.getTransactions(shop.id);
+      setTransactions(txns);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    }
+  };
 
   const handleSave = () => {
     if (!shop || !form) return;
@@ -306,15 +346,13 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     onUpdate();
   };
 
-  const handleRemovePayment = (methodId: string) => {
+  const handleRemovePayment = async (methodId: string) => {
     if (!shop) return;
-    WalletAPI.removePaymentMethod(shop.id, methodId);
+    await WalletAPI.removePaymentMethod(shop.id, methodId);
     onUpdate();
   };
 
   if (!shop || !form) return null;
-
-  const transactions = WalletAPI.getTransactions(shop.id);
 
   return (
     <div className="animate-fade-in max-w-2xl">
@@ -1074,26 +1112,35 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
   if (!shop) return null;
 
-  const addTable = () => {
+  const addTable = async () => {
     if (!newTable.table_number) return;
-    const newTableData = TableAPI.create({
-      shop_id: shop.id,
-      table_number: parseInt(newTable.table_number),
-      label: newTable.label || `Table ${newTable.table_number}`,
-      seats: parseInt(newTable.seats) || 2,
-      location: newTable.location,
-      is_active: true,
-    });
-    setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
-    setShowAddTable(false);
-    onUpdate();
-    // Show success message with the new table
-    alert(`Table ${newTableData.table_number} created successfully! You can now view and test the QR code.`);
+    try {
+      const newTableData = await TableAPI.create({
+        shop_id: shop.id,
+        table_number: parseInt(newTable.table_number),
+        label: newTable.label || `Table ${newTable.table_number}`,
+        seats: parseInt(newTable.seats) || 2,
+        location: newTable.location,
+        is_active: true,
+      });
+      setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
+      setShowAddTable(false);
+      onUpdate();
+      // Show success message with the new table
+      alert(`Table ${newTableData.table_number} created successfully! You can now view and test the QR code.`);
+    } catch (error) {
+      console.error('Error creating table:', error);
+      alert('Error creating table. Please try again.');
+    }
   };
 
-  const deleteTable = (id: string) => {
-    TableAPI.delete(id);
-    onUpdate();
+  const deleteTable = async (id: string) => {
+    try {
+      await TableAPI.delete(id);
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting table:', error);
+    }
   };
 
   const getQRUrl = (table: Table) => {
