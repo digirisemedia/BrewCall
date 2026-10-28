@@ -192,7 +192,11 @@ export default function ShopAdminDashboard() {
             shop={shop}
             pendingRequests={pendingRequests}
             allRequests={requests}
-            onResolve={(id: string) => { RequestAPI.resolve(id); playSuccessSound(); loadData(); }}
+            onResolve={async (id: string) => { 
+              await RequestAPI.resolve(id); 
+              playSuccessSound(); 
+              loadData(); 
+            }}
             soundEnabled={soundEnabled}
             onToggleSound={() => setSoundEnabled(!soundEnabled)}
           />
@@ -309,11 +313,16 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!shop || !form) return;
-    ShopAPI.update(shop.id, form);
-    setEditing(false);
-    onUpdate();
+    try {
+      await ShopAPI.update(shop.id, form);
+      setEditing(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error saving shop:', error);
+      alert('Error saving changes. Please try again.');
+    }
   };
 
   const handleCancel = () => {
@@ -323,27 +332,37 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     setEditing(false);
   };
 
-  const handleTopUp = () => {
+  const handleTopUp = async () => {
     if (!shop || !topUpAmount) return;
     const amount = parseFloat(topUpAmount);
     if (amount <= 0) return;
     
-    const defaultMethod = shop.payment_methods.find(m => m.is_default);
-    WalletAPI.topUp(shop.id, amount, defaultMethod?.type);
-    setTopUpAmount('');
-    setShowTopUp(false);
-    onUpdate();
+    try {
+      const defaultMethod = shop.payment_methods.find(m => m.is_default);
+      await WalletAPI.topUp(shop.id, amount, defaultMethod?.type);
+      setTopUpAmount('');
+      setShowTopUp(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error topping up:', error);
+      alert('Error adding funds. Please try again.');
+    }
   };
 
-  const handleAddPayment = () => {
+  const handleAddPayment = async () => {
     if (!shop || !newPayment.label) return;
-    WalletAPI.addPaymentMethod(shop.id, {
-      ...newPayment,
-      is_default: shop.payment_methods.length === 0,
-    });
-    setNewPayment({ type: 'cash_plus', label: '', details: '' });
-    setShowAddPayment(false);
-    onUpdate();
+    try {
+      await WalletAPI.addPaymentMethod(shop.id, {
+        ...newPayment,
+        is_default: shop.payment_methods.length === 0,
+      });
+      setNewPayment({ type: 'cash_plus', label: '', details: '' });
+      setShowAddPayment(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      alert('Error adding payment method. Please try again.');
+    }
   };
 
   const handleRemovePayment = async (methodId: string) => {
@@ -801,48 +820,73 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
 
   const categoryItems = items.filter((i) => i.category_id === selectedCategory);
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCatName) return;
-    CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
-    setNewCatName('');
-    setShowAddCategory(false);
-    onUpdate();
-  };
-
-  const addItem = () => {
-    if (!newItem.name || !newItem.price || !selectedCategory) return;
-    ItemAPI.create({
-      shop_id: shop.id,
-      category_id: selectedCategory,
-      name: newItem.name,
-      description: newItem.description,
-      price: parseFloat(newItem.price),
-      image_emoji: newItem.image_emoji,
-      image_url: newItem.image_url || undefined,
-      is_available: true,
-      is_popular: newItem.is_popular,
-    });
-    setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
-    setShowAddItem(false);
-    onUpdate();
-  };
-
-  const toggleItemAvailability = (itemId: string, current: boolean) => {
-    ItemAPI.update(itemId, { is_available: !current });
-    onUpdate();
-  };
-
-  const deleteItem = (itemId: string) => {
-    ItemAPI.delete(itemId);
-    onUpdate();
-  };
-
-  const deleteCategory = (catId: string) => {
-    CategoryAPI.delete(catId);
-    if (selectedCategory === catId && categories.length > 1) {
-      setSelectedCategory(categories.find((c) => c.id !== catId)?.id || '');
+    try {
+      await CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
+      setNewCatName('');
+      setShowAddCategory(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      alert('Error creating category. Please try again.');
     }
-    onUpdate();
+  };
+
+  const addItem = async () => {
+    if (!newItem.name || !newItem.price || !selectedCategory) return;
+    try {
+      await ItemAPI.create({
+        shop_id: shop.id,
+        category_id: selectedCategory,
+        name: newItem.name,
+        description: newItem.description,
+        price: parseFloat(newItem.price),
+        image_emoji: newItem.image_emoji,
+        image_url: newItem.image_url || undefined,
+        is_available: true,
+        is_popular: newItem.is_popular,
+      });
+      setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
+      setShowAddItem(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error creating item:', error);
+      alert('Error creating item. Please try again.');
+    }
+  };
+
+  const toggleItemAvailability = async (itemId: string, current: boolean) => {
+    try {
+      await ItemAPI.update(itemId, { is_available: !current });
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('Error updating item. Please try again.');
+    }
+  };
+
+  const deleteItem = async (itemId: string) => {
+    try {
+      await ItemAPI.delete(itemId);
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert('Error deleting item. Please try again.');
+    }
+  };
+
+  const deleteCategory = async (catId: string) => {
+    try {
+      await CategoryAPI.delete(catId);
+      if (selectedCategory === catId && categories.length > 1) {
+        setSelectedCategory(categories.find((c) => c.id !== catId)?.id || '');
+      }
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert('Error deleting category. Please try again.');
+    }
   };
 
   return (
