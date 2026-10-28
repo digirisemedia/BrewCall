@@ -1,8 +1,16 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
+import { CurrencyProvider } from './context/CurrencyContext';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import Dashboard from './pages/Dashboard';
+import ShopAdminDashboard from './pages/ShopAdminDashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import CustomerView from './pages/CustomerView';
+import ContactPage from './pages/ContactPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -22,25 +30,43 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function DashboardRouter() {
+  const { user } = useAuth();
+  
+  if (user?.role === 'super_admin') {
+    return <SuperAdminDashboard />;
+  }
+  
+  return <ShopAdminDashboard />;
+}
+
 function App() {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </HashRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <CurrencyProvider>
+        <AuthProvider>
+          <HashRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardRouter />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/customer/:shopId/:tableId" element={<CustomerView />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+            </Routes>
+          </HashRouter>
+        </AuthProvider>
+      </CurrencyProvider>
+    </LanguageProvider>
   );
 }
 

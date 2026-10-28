@@ -18,10 +18,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    seedInitialData();
-    const currentUser = AuthAPI.getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
+    const initializeApp = async () => {
+      try {
+        // Seed initial data to Firestore (if not already seeded)
+        await seedInitialData();
+        
+        // Get current user from localStorage (session)
+        const currentUser = AuthAPI.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        // Continue even if seeding fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    initializeApp();
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
