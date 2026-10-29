@@ -61,21 +61,6 @@ export default function LoginPage() {
     setIsLoading(false);
   };
 
-  const quickLogin = async (em: string, pw: string) => {
-    setEmail(em);
-    setPassword(pw);
-    setError('');
-    setIsLoading(true);
-    
-    const success = await login(em, pw);
-    if (success) {
-      navigate('/dashboard');
-    } else {
-      setError(t('login.invalid'));
-    }
-    setIsLoading(false);
-  };
-
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
       <div className="fixed inset-0 gradient-mesh opacity-40"></div>
@@ -184,19 +169,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Demo Account */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-xs text-gray-500 text-center mb-4 font-medium uppercase tracking-wider">{t('login.quickDemo')}</p>
-            <button
-              onClick={() => quickLogin('owner@aroma.coffee', 'owner123')}
-              className="w-full p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-start group"
-            >
-              <p className="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">{t('landing.shopOwner')}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Aroma Coffee House</p>
-            </button>
-          </div>
-
-          <div className="mt-6 text-center text-sm text-gray-400">
+          <div className="mt-8 text-center text-sm text-gray-400">
             {t('register.haveAccount')}{' '}
             <Link to="/register" className="text-violet-400 hover:text-violet-300 font-medium">
               {t('register.createAccount')}
