@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await seedInitialData();
         
         // Listen to Firebase auth state changes
-        const unsubscribe = observeAuthState(async (firebaseUser) => {
+        const unsubscribe = observeAuthState(async (firebaseUser: any) => {
           if (firebaseUser) {
             // User is logged in via Firebase
             // Check if user exists in our database

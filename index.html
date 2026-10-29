@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>coder-app-name</title>
+    <title>BrewCall - Smart Waiter Call System</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <style>
-      /* 内联样式确保主题色立即生效，避免闪烁 */
+      /* Inline styles to ensure theme colors apply immediately, preventing flash */
       html,
       body {
         margin: 0;
@@ -29,7 +29,7 @@
       }
     </style>
     <script>
-      // 在 React 加载前立即设置主题，避免闪烁
+      // Set theme immediately before React loads to prevent flash
       (function () {
         const isInIframe = window.self !== window.top;
 
@@ -40,7 +40,7 @@
         }
 
         if (isInIframe) {
-          // 监听父窗口主动推送的主题消息
+          // Listen for theme messages from parent window
           window.addEventListener("message", function (event) {
             if (event.data && typeof event.data.theme === "string") {
               const theme = event.data.theme;
@@ -50,7 +50,7 @@
             }
           });
         } else {
-          // 非 iframe 环境，使用默认 light 主题
+          // Non-iframe environment, use default light theme
           applyThemeToDOM("light");
         }
       })();
@@ -60,11 +60,11 @@
         if (window.self === window.top) return;
         var reported = {};
         window.addEventListener("error", function (event) {
-          // 资源加载失败的 error 事件没有 message，此处仅上报 JS 运行时错误
+          // Only report JS runtime errors (resource load errors don't have message)
           if (!event || !event.message) return;
           var key =
             event.message + "|" + (event.filename || "") + "|" + (event.lineno || 0);
-          if (reported[key]) return; // 相同错误只上报一次，避免渲染循环刷屏
+          if (reported[key]) return; // Report same error only once to avoid spam
           reported[key] = true;
           try {
             window.parent.postMessage(
@@ -84,7 +84,7 @@
               "*"
             );
           } catch (e) {
-            /* 上报失败不影响页面运行 */
+            /* Reporting failure doesn't affect page operation */
           }
         });
       })();
@@ -92,6 +92,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
