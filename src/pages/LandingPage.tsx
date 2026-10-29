@@ -24,18 +24,17 @@ export default function LandingPage() {
           </span>
         </div>
         <div className="flex items-center gap-3 animate-fade-in-right">
-          <LanguageSwitcher />
           <Link
             to="/login"
             className="hidden sm:block px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors"
           >
-            Sign In
+            {t('landing.signIn')}
           </Link>
           <Link
             to="/register"
             className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-semibold rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all hover:-translate-y-0.5"
           >
-            Get Started Free
+            {t('landing.getStarted')}
           </Link>
         </div>
       </nav>
@@ -64,21 +63,21 @@ export default function LandingPage() {
         <div className="text-center max-w-4xl mx-auto relative">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 mb-8 animate-fade-in-down backdrop-blur-sm">
             <Star className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>Trusted by 500+ coffee shops worldwide</span>
+            <span>{t('landing.trusted')}</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-black leading-tight mb-6 animate-fade-in-up">
             <span className="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-              Smart Waiter Call
+              {t('landing.hero1')}
             </span>
             <br />
             <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
-              for Coffee Shops
+              {t('landing.hero2')}
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 animate-fade-in-up stagger-2 leading-relaxed">
-            Transform your coffee shop with QR-powered digital menus and instant service requests. No app downloads. No hardware needed. Just scan and serve.
+            {t('landing.heroDesc')}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up stagger-3">
@@ -86,7 +85,7 @@ export default function LandingPage() {
               to="/register"
               className="group relative flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-2xl shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:-translate-y-1 overflow-hidden"
             >
-              <span className="relative z-10">Start Free Trial</span>
+              <span className="relative z-10">{t('landing.cta')}</span>
               <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-gradient-to-r from-violet-700 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </Link>
@@ -94,14 +93,14 @@ export default function LandingPage() {
               to="/login"
               className="group flex items-center gap-2 px-8 py-4 glass text-white font-semibold rounded-2xl hover:bg-white/10 transition-all hover:-translate-y-1 backdrop-blur-sm"
             >
-              <span className="group-hover:scale-110 transition-transform">📱</span> View Demo
+              <span className="group-hover:scale-110 transition-transform">📱</span> {t('landing.demo')}
             </Link>
           </div>
 
           <div className="mt-12 p-4 glass rounded-2xl max-w-md mx-auto animate-fade-in-up stagger-4 backdrop-blur-sm hover:scale-105 transition-transform">
-            <p className="text-xs text-gray-400 mb-2 font-medium text-center">Demo Accounts</p>
+            <p className="text-xs text-gray-400 mb-2 font-medium text-center">{t('landing.demoAccounts')}</p>
             <div className="bg-white/5 rounded-lg p-3 text-xs">
-              <span className="text-emerald-400 font-semibold">Shop Owner:</span>
+              <span className="text-emerald-400 font-semibold">{t('landing.shopOwner')}:</span>
               <span className="text-gray-300 ml-1">owner@aroma.coffee / owner123</span>
             </div>
           </div>
@@ -111,24 +110,24 @@ export default function LandingPage() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Everything You Need to{' '}
+            {t('landing.featuresTitle1')}{' '}
             <span className="bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">
-              Serve Better
+              {t('landing.featuresTitle2')}
             </span>
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto">
-            From digital menus to instant service alerts, BrewCall gives your coffee shop superpowers.
+            {t('landing.featuresDesc')}
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            { icon: QrCode, title: 'QR Code Menus', desc: 'Generate unique QR codes for each table. Customers scan to view your menu instantly.', color: 'from-violet-500 to-purple-600' },
-            { icon: Zap, title: 'Instant Alerts', desc: 'Real-time notifications when customers need service. Audio + visual alerts for staff.', color: 'from-amber-500 to-orange-600' },
-            { icon: Smartphone, title: 'No App Required', desc: 'Works on any phone browser. No downloads, no installs. Just scan and go.', color: 'from-emerald-500 to-teal-600' },
-            { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Track request patterns, peak hours, and service performance metrics.', color: 'from-blue-500 to-indigo-600' },
-            { icon: MapPin, title: 'Multi-Location', desc: 'Manage multiple coffee shop locations from a single admin dashboard.', color: 'from-pink-500 to-rose-600' },
-            { icon: Coffee, title: 'Built for Coffee', desc: 'Designed specifically for coffee shops, cafes, and quick-service restaurants.', color: 'from-amber-600 to-yellow-600' },
+            { icon: QrCode, title: t('landing.feat.qr.title'), desc: t('landing.feat.qr.desc'), color: 'from-violet-500 to-purple-600' },
+            { icon: Zap, title: t('landing.feat.alert.title'), desc: t('landing.feat.alert.desc'), color: 'from-amber-500 to-orange-600' },
+            { icon: Smartphone, title: t('landing.feat.noapp.title'), desc: t('landing.feat.noapp.desc'), color: 'from-emerald-500 to-teal-600' },
+            { icon: BarChart3, title: t('landing.feat.analytics.title'), desc: t('landing.feat.analytics.desc'), color: 'from-blue-500 to-indigo-600' },
+            { icon: MapPin, title: t('landing.feat.multi.title'), desc: t('landing.feat.multi.desc'), color: 'from-pink-500 to-rose-600' },
+            { icon: Coffee, title: t('landing.feat.coffee.title'), desc: t('landing.feat.coffee.desc'), color: 'from-amber-600 to-yellow-600' },
           ].map((feature, i) => (
             <div
               key={i}
@@ -146,15 +145,15 @@ export default function LandingPage() {
 
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-          <p className="text-gray-400">Start free. Upgrade when you're ready.</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('landing.pricing.title')}</h2>
+          <p className="text-gray-400">{t('landing.pricing.desc')}</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {[
-            { name: 'Free', price: '$0', period: '/mo', features: ['1 Location', '5 Tables', 'Basic Menu', 'Email Support'], cta: 'Start Free', popular: false },
-            { name: 'Starter', price: '$29', period: '/mo', features: ['1 Location', '20 Tables', 'Full Menu', 'QR Codes', 'Analytics', 'Priority Support'], cta: 'Start Trial', popular: true },
-            { name: 'Pro', price: '$79', period: '/mo', features: ['Unlimited Locations', 'Unlimited Tables', 'Custom Branding', 'API Access', 'White Label', '24/7 Support'], cta: 'Contact Sales', popular: false },
+            { name: t('landing.pricing.free'), price: '$0', period: `/${t('landing.price.month')}`, features: [`1 ${t('landing.price.location')}`, `5 ${t('landing.price.tables')}`, t('landing.price.basicMenu'), t('landing.price.emailSupport')], cta: t('landing.cta'), popular: false },
+            { name: t('landing.pricing.starter'), price: '$29', period: `/${t('landing.price.month')}`, features: [`1 ${t('landing.price.location')}`, `20 ${t('landing.price.tables')}`, t('landing.price.fullMenu'), t('landing.price.qrCodes'), t('landing.price.analytics'), t('landing.price.prioritySupport')], cta: t('landing.pricing.startTrial'), popular: true },
+            { name: t('landing.pricing.pro'), price: '$79', period: `/${t('landing.price.month')}`, features: [`${t('landing.price.unlimited')} ${t('landing.price.locations')}`, `${t('landing.price.unlimited')} ${t('landing.price.tables')}`, t('landing.price.customBranding'), t('landing.price.apiAccess'), t('landing.price.whiteLabel'), t('landing.price.support247')], cta: t('landing.pricing.contact'), popular: false },
           ].map((plan, i) => (
             <div
               key={i}
@@ -166,7 +165,7 @@ export default function LandingPage() {
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-bold rounded-full">
-                  MOST POPULAR
+                  {t('landing.pricing.popular')}
                 </div>
               )}
               <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
@@ -198,7 +197,7 @@ export default function LandingPage() {
 
       <footer className="relative z-10 border-t border-white/5 py-16">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-4">
@@ -210,7 +209,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                Smart waiter call system for modern coffee shops. Transform your service with QR-powered digital menus.
+                {t('footer.tagline')}
               </p>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <MapPin className="w-3 h-3" />
@@ -220,43 +219,49 @@ export default function LandingPage() {
 
             {/* Product */}
             <div>
-              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Product</h4>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{t('footer.product')}</h4>
               <ul className="space-y-3">
-                <li><a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">Features</a></li>
-                <li><a href="#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</a></li>
-                <li><Link to="/login" className="text-gray-400 hover:text-white text-sm transition-colors">Live Demo</Link></li>
+                <li><a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.features')}</a></li>
+                <li><a href="#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.pricing')}</a></li>
+                <li><Link to="/login" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.demo')}</Link></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Company</h4>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{t('footer.company')}</h4>
               <ul className="space-y-3">
-                <li><Link to="/about" className="text-gray-400 hover:text-white text-sm transition-colors">About Us</Link></li>
-                <li><Link to="/contact" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</Link></li>
+                <li><Link to="/about" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.about')}</Link></li>
+                <li><Link to="/contact" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.contact')}</Link></li>
               </ul>
             </div>
 
             {/* Legal */}
             <div>
-              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Legal</h4>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{t('footer.legal')}</h4>
               <ul className="space-y-3">
-                <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms & Conditions</Link></li>
-                <li><Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Use</Link></li>
+                <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.terms')}</Link></li>
+                <li><Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.privacy')}</Link></li>
+                <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.termsOfUse')}</Link></li>
               </ul>
+            </div>
+
+            {/* Language */}
+            <div>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Language</h4>
+              <LanguageSwitcher />
             </div>
           </div>
 
           {/* Bottom bar */}
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-gray-500 text-sm">© 2024 BrewCall. All rights reserved.</p>
+            <p className="text-gray-500 text-sm">{t('footer.rights')}</p>
             <div className="flex items-center gap-4">
               <a href="mailto:contact@brewcallapp.com" className="text-gray-400 hover:text-white text-sm transition-colors">
                 contact@brewcallapp.com
               </a>
               <span className="text-gray-600">•</span>
-              <span className="text-gray-500 text-sm">Made with ❤️ in Morocco</span>
+              <span className="text-gray-500 text-sm">{t('footer.madeIn')}</span>
             </div>
           </div>
         </div>
