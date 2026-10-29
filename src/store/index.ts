@@ -34,6 +34,12 @@ function fromFirestore<T>(docData: any, id: string): T {
 // Convert app type to Firestore document
 function toFirestore(data: any): any {
   const doc = { ...data };
+  // Remove undefined values
+  Object.keys(doc).forEach(key => {
+    if (doc[key] === undefined) {
+      delete doc[key];
+    }
+  });
   // Convert timestamps to Firestore format
   if (doc.created_at && typeof doc.created_at === 'number') {
     doc.created_at = Timestamp.fromMillis(doc.created_at);
@@ -282,13 +288,16 @@ export const ShopAPI = {
 export const CategoryAPI = {
   async getByShop(shopId: string): Promise<MenuCategory[]> {
     try {
+      console.log('Getting categories for shop:', shopId);
       const q = query(
         collection(db, 'categories'),
         where('shop_id', '==', shopId),
         orderBy('order')
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(docSnap => fromFirestore<MenuCategory>(docSnap.data(), docSnap.id));
+      const categories = snapshot.docs.map(docSnap => fromFirestore<MenuCategory>(docSnap.data(), docSnap.id));
+      console.log('Categories retrieved:', categories.length);
+      return categories;
     } catch (error) {
       console.error('Error getting categories:', error);
       return [];
@@ -297,8 +306,12 @@ export const CategoryAPI = {
 
   async create(cat: Omit<MenuCategory, 'id'>): Promise<MenuCategory> {
     try {
+      console.log('Creating category:', cat);
       const newCat: MenuCategory = { ...cat, id: genId('cat') };
-      await setDoc(doc(db, 'categories', newCat.id), toFirestore(newCat));
+      const firestoreData = toFirestore(newCat);
+      console.log('Firestore data to save:', firestoreData);
+      await setDoc(doc(db, 'categories', newCat.id), firestoreData);
+      console.log('Category created successfully:', newCat.id);
       return newCat;
     } catch (error) {
       console.error('Error creating category:', error);
@@ -308,7 +321,9 @@ export const CategoryAPI = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting category:', id);
       await deleteDoc(doc(db, 'categories', id));
+      console.log('Category deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
       throw error;
@@ -320,9 +335,12 @@ export const CategoryAPI = {
 export const ItemAPI = {
   async getByShop(shopId: string): Promise<MenuItem[]> {
     try {
+      console.log('Getting items for shop:', shopId);
       const q = query(collection(db, 'items'), where('shop_id', '==', shopId));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(docSnap => fromFirestore<MenuItem>(docSnap.data(), docSnap.id));
+      const items = snapshot.docs.map(docSnap => fromFirestore<MenuItem>(docSnap.data(), docSnap.id));
+      console.log('Items retrieved:', items.length);
+      return items;
     } catch (error) {
       console.error('Error getting items:', error);
       return [];
@@ -331,12 +349,16 @@ export const ItemAPI = {
 
   async create(item: Omit<MenuItem, 'id' | 'created_at'>): Promise<MenuItem> {
     try {
+      console.log('Creating item:', item);
       const newItem: MenuItem = { 
         ...item, 
         id: genId('item'), 
         created_at: Date.now() 
       };
-      await setDoc(doc(db, 'items', newItem.id), toFirestore(newItem));
+      const firestoreData = toFirestore(newItem);
+      console.log('Firestore data to save:', firestoreData);
+      await setDoc(doc(db, 'items', newItem.id), firestoreData);
+      console.log('Item created successfully:', newItem.id);
       return newItem;
     } catch (error) {
       console.error('Error creating item:', error);
@@ -346,7 +368,10 @@ export const ItemAPI = {
 
   async update(id: string, data: Partial<MenuItem>): Promise<void> {
     try {
-      await updateDoc(doc(db, 'items', id), toFirestore(data));
+      console.log('Updating item:', id, data);
+      const firestoreData = toFirestore(data);
+      await updateDoc(doc(db, 'items', id), firestoreData);
+      console.log('Item updated successfully');
     } catch (error) {
       console.error('Error updating item:', error);
       throw error;
@@ -355,7 +380,9 @@ export const ItemAPI = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting item:', id);
       await deleteDoc(doc(db, 'items', id));
+      console.log('Item deleted successfully');
     } catch (error) {
       console.error('Error deleting item:', error);
       throw error;
@@ -367,13 +394,16 @@ export const ItemAPI = {
 export const TableAPI = {
   async getByShop(shopId: string): Promise<Table[]> {
     try {
+      console.log('Getting tables for shop:', shopId);
       const q = query(
         collection(db, 'tables'),
         where('shop_id', '==', shopId),
         orderBy('table_number')
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(docSnap => fromFirestore<Table>(docSnap.data(), docSnap.id));
+      const tables = snapshot.docs.map(docSnap => fromFirestore<Table>(docSnap.data(), docSnap.id));
+      console.log('Tables retrieved:', tables.length);
+      return tables;
     } catch (error) {
       console.error('Error getting tables:', error);
       return [];
@@ -382,9 +412,15 @@ export const TableAPI = {
 
   async getById(id: string): Promise<Table | undefined> {
     try {
+      console.log('Getting table by ID:', id);
       const docSnap = await getDoc(doc(db, 'tables', id));
-      if (!docSnap.exists()) return undefined;
-      return fromFirestore<Table>(docSnap.data(), docSnap.id);
+      if (!docSnap.exists()) {
+        console.log('Table not found');
+        return undefined;
+      }
+      const table = fromFirestore<Table>(docSnap.data(), docSnap.id);
+      console.log('Table retrieved:', table);
+      return table;
     } catch (error) {
       console.error('Error getting table:', error);
       return undefined;
@@ -393,12 +429,16 @@ export const TableAPI = {
 
   async create(table: Omit<Table, 'id' | 'created_at'>): Promise<Table> {
     try {
+      console.log('Creating table:', table);
       const newTable: Table = { 
         ...table, 
         id: genId('tbl'), 
         created_at: Date.now() 
       };
-      await setDoc(doc(db, 'tables', newTable.id), toFirestore(newTable));
+      const firestoreData = toFirestore(newTable);
+      console.log('Firestore data to save:', firestoreData);
+      await setDoc(doc(db, 'tables', newTable.id), firestoreData);
+      console.log('Table created successfully:', newTable.id);
       return newTable;
     } catch (error) {
       console.error('Error creating table:', error);
@@ -408,7 +448,9 @@ export const TableAPI = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting table:', id);
       await deleteDoc(doc(db, 'tables', id));
+      console.log('Table deleted successfully');
     } catch (error) {
       console.error('Error deleting table:', error);
       throw error;

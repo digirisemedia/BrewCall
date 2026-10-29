@@ -51,14 +51,19 @@ export default function LandingPage() {
             className="w-full h-full object-cover"
             poster="image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect fill='%231a1a2e' width='1920' height='1080'/%3E%3C/svg%3E"
           >
-            <source src="https://pixabay.com/videos/download/video-181546_medium.mp4" type="video/mp4" />
+            <source src="https://cdn.pixabay.com/video/2023/09/21/181546-866999878_large.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] via-transparent to-[#0a0a0f]"></div>
         </div>
 
+        {/* Floating decorative elements */}
+        <div className="absolute top-20 left-10 w-20 h-20 bg-violet-500/10 rounded-full blur-2xl animate-float"></div>
+        <div className="absolute bottom-20 right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-pink-500/10 rounded-full blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
+
         <div className="text-center max-w-4xl mx-auto relative">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 mb-8 animate-fade-in-down">
-            <Star className="w-4 h-4 text-amber-400" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 mb-8 animate-fade-in-down backdrop-blur-sm">
+            <Star className="w-4 h-4 text-amber-400 animate-pulse" />
             <span>Trusted by 500+ coffee shops worldwide</span>
           </div>
 
@@ -67,32 +72,33 @@ export default function LandingPage() {
               Smart Waiter Call
             </span>
             <br />
-            <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent animate-gradient">
+            <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
               for Coffee Shops
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 animate-fade-in-up stagger-2">
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 animate-fade-in-up stagger-2 leading-relaxed">
             Transform your coffee shop with QR-powered digital menus and instant service requests. No app downloads. No hardware needed. Just scan and serve.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up stagger-3">
             <Link
               to="/register"
-              className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-2xl shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:-translate-y-1"
+              className="group relative flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-2xl shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:-translate-y-1 overflow-hidden"
             >
-              Start Free Trial
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <span className="relative z-10">Start Free Trial</span>
+              <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-700 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </Link>
             <Link
               to="/login"
-              className="flex items-center gap-2 px-8 py-4 glass text-white font-semibold rounded-2xl hover:bg-white/10 transition-all"
+              className="group flex items-center gap-2 px-8 py-4 glass text-white font-semibold rounded-2xl hover:bg-white/10 transition-all hover:-translate-y-1 backdrop-blur-sm"
             >
-              <span>📱</span> View Demo
+              <span className="group-hover:scale-110 transition-transform">📱</span> View Demo
             </Link>
           </div>
 
-          <div className="mt-12 p-4 glass rounded-2xl max-w-md mx-auto animate-fade-in-up stagger-4">
+          <div className="mt-12 p-4 glass rounded-2xl max-w-md mx-auto animate-fade-in-up stagger-4 backdrop-blur-sm hover:scale-105 transition-transform">
             <p className="text-xs text-gray-400 mb-2 font-medium text-center">Demo Accounts</p>
             <div className="bg-white/5 rounded-lg p-3 text-xs">
               <span className="text-emerald-400 font-semibold">Shop Owner:</span>
