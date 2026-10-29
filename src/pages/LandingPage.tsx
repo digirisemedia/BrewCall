@@ -221,8 +221,8 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{t('footer.product')}</h4>
               <ul className="space-y-3">
-                <li><a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.features')}</a></li>
-                <li><a href="#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.pricing')}</a></li>
+                <li><Link to="/features" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.features')}</Link></li>
+                <li><Link to="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.pricing')}</Link></li>
                 <li><Link to="/login" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.demo')}</Link></li>
               </ul>
             </div>
@@ -242,7 +242,7 @@ export default function LandingPage() {
               <ul className="space-y-3">
                 <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.terms')}</Link></li>
                 <li><Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.privacy')}</Link></li>
-                <li><Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.termsOfUse')}</Link></li>
+                <li><Link to="/terms-of-use" className="text-gray-400 hover:text-white text-sm transition-colors">{t('footer.termsOfUse')}</Link></li>
               </ul>
             </div>
 
