@@ -89,12 +89,6 @@ export default function LandingPage() {
               <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-gradient-to-r from-violet-700 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </Link>
-            <Link
-              to="/login"
-              className="group flex items-center gap-2 px-8 py-4 glass text-white font-semibold rounded-2xl hover:bg-white/10 transition-all hover:-translate-y-1 backdrop-blur-sm"
-            >
-              <span className="group-hover:scale-110 transition-transform">📱</span> {t('landing.demo')}
-            </Link>
           </div>
         </div>
       </section>

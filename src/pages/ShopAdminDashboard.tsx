@@ -904,7 +904,7 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
 
   const categoryItems = items.filter((i) => i.category_id === selectedCategory);
 
-  const addCategory = async () => {
+  const addCategory = () => {
     if (!newCatName) return;
     
     const loadingToast = document.createElement('div');
@@ -914,7 +914,7 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
     
     try {
       console.log('Creating category:', { shop_id: shop.id, name: newCatName, icon: newCatIcon });
-      const result = await CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
+      const result = CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
       
       if (result) {
         console.log('Category created successfully:', result);
@@ -943,7 +943,7 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
     }
   };
 
-  const addItem = async () => {
+  const addItem = () => {
     if (!newItem.name || !newItem.price || !selectedCategory) return;
     
     const loadingToast = document.createElement('div');
@@ -959,7 +959,7 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
         price: parseFloat(newItem.price)
       });
       
-      const result = await ItemAPI.create({
+      const result = ItemAPI.create({
         shop_id: shop.id,
         category_id: selectedCategory,
         name: newItem.name,
@@ -998,29 +998,29 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
     }
   };
 
-  const toggleItemAvailability = async (itemId: string, current: boolean) => {
+  const toggleItemAvailability = (itemId: string, current: boolean) => {
     try {
-      await ItemAPI.update(itemId, { is_available: !current });
+      ItemAPI.update(itemId, { is_available: !current });
       onUpdate();
     } catch (error) {
       console.error('Error updating item:', error);
       alert('Error updating item. Please try again.');
     }
   };
-
-  const deleteItem = async (itemId: string) => {
+  
+  const deleteItem = (itemId: string) => {
     try {
-      await ItemAPI.delete(itemId);
+      ItemAPI.delete(itemId);
       onUpdate();
     } catch (error) {
       console.error('Error deleting item:', error);
       alert('Error deleting item. Please try again.');
     }
   };
-
-  const deleteCategory = async (catId: string) => {
+  
+  const deleteCategory = (catId: string) => {
     try {
-      await CategoryAPI.delete(catId);
+      CategoryAPI.delete(catId);
       if (selectedCategory === catId && categories.length > 1) {
         setSelectedCategory(categories.find((c) => c.id !== catId)?.id || '');
       }
@@ -1030,7 +1030,6 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
       alert('Error deleting category. Please try again.');
     }
   };
-
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-8">
@@ -1298,7 +1297,7 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
   if (!shop) return null;
 
-  const addTable = async () => {
+  const addTable = () => {
     if (!newTable.table_number) return;
     
     const loadingToast = document.createElement('div');
@@ -1313,7 +1312,7 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
         label: newTable.label
       });
       
-      const newTableData = await TableAPI.create({
+      const newTableData = TableAPI.create({
         shop_id: shop.id,
         table_number: parseInt(newTable.table_number),
         label: newTable.label || `Table ${newTable.table_number}`,
@@ -1347,18 +1346,17 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
       }, 3000);
     }
   };
-
-  const deleteTable = async (id: string) => {
+  
+  const deleteTable = (id: string) => {
     try {
-      await TableAPI.delete(id);
+      TableAPI.delete(id);
       onUpdate();
     } catch (error) {
       console.error('Error deleting table:', error);
     }
   };
-
   const getQRUrl = (table: Table) => {
-    return `${window.location.origin}${window.location.pathname}#/customer/${shop.id}/${table.id}`;
+    return `${window.location.origin}/#/customer/${shop.id}/${table.id}`;
   };
 
   return (
