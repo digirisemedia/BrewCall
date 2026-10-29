@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '../types';
-import { AuthAPI, seedInitialData } from '../store';
-import { signInWithGoogle, signInWithApple, signInWithEmail, signUpWithEmail, signOut as firebaseSignOut, observeAuthState } from '../firebase/auth';
+import { AuthAPI, seedInitialData, ShopAPI } from '../store';
 
 interface AuthContextType {
   user: User | null;
@@ -22,62 +21,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Seed initial data to Firestore (if not already seeded)
+        // Seed initial data (if not already seeded)
         await seedInitialData();
         
-        // Listen to Firebase auth state changes
-        const unsubscribe = observeAuthState(async (firebaseUser: any) => {
-          if (firebaseUser) {
-            // User is logged in via Firebase
-            // Check if user exists in our database
-            let appUser = await AuthAPI.getUserByEmail(firebaseUser.email || '');
-            
-            if (!appUser) {
-              // Create new user in our database
-              appUser = await AuthAPI.createUser({
-                email: firebaseUser.email || '',
-                password: 'firebase_oauth', // Placeholder, Firebase handles auth
-                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-                role: 'shop_admin',
-                shop_id: null,
-              });
-              
-              // Automatically create a shop for the new user
-              const { ShopAPI } = await import('../store');
-              const newShop = await ShopAPI.create({
-                name: `${appUser.name}'s Coffee Shop`,
-                tagline: 'Welcome to our coffee shop!',
-                description: '',
-                address: '',
-                phone: '',
-                email: appUser.email,
-                logo_emoji: '☕',
-                primary_color: '#8B4513',
-                owner_id: appUser.id,
-                is_active: true,
-                subscription_plan: 'free',
-                wallet_balance: 0,
-                payment_methods: [],
-              });
-              
-              // Update user with shop_id
-              appUser = { ...appUser, shop_id: newShop.id };
-              await AuthAPI.updateUser(appUser.id, { shop_id: newShop.id });
-            }
-            
-            setUser(appUser);
-            localStorage.setItem('scaas_current_user', JSON.stringify(appUser));
-          } else {
-            // User is logged out
-            setUser(null);
-            localStorage.removeItem('scaas_current_user');
-          }
-          setIsLoading(false);
-        });
-        
-        return () => unsubscribe();
+        // Get current user from localStorage
+        const currentUser = AuthAPI.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+        }
       } catch (error) {
         console.error('Error initializing app:', error);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -86,27 +40,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    try {
-      const firebaseUser = await signInWithEmail(email, password);
-      if (firebaseUser) {
-        // Firebase auth succeeded, user will be set by observer
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+    const loggedIn = AuthAPI.login(email, password);
+    if (loggedIn) {
+      setUser(loggedIn);
+      return true;
     }
+    return false;
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string): Promise<boolean> => {
     try {
-      const firebaseUser = await signUpWithEmail(email, password, name);
-      if (firebaseUser) {
-        // Firebase auth succeeded, user will be set by observer
-        return true;
+      // Check if user already exists
+      const existingUser = AuthAPI.getUserByEmail(email);
+      if (existingUser) {
+        return false;
       }
-      return false;
+
+      // Create new user
+      const newUser = AuthAPI.createUser({
+        email,
+        password,
+        name,
+        role: 'shop_admin',
+        shop_id: null,
+      });
+
+      // Automatically create a shop for the new user
+      const newShop = ShopAPI.create({
+        name: `${name}'s Coffee Shop`,
+        tagline: 'Welcome to our coffee shop!',
+        description: '',
+        address: '',
+        phone: '',
+        email,
+        logo_emoji: '☕',
+        primary_color: '#8B4513',
+        owner_id: newUser.id,
+        is_active: true,
+        subscription_plan: 'free',
+        wallet_balance: 0,
+        payment_methods: [],
+      });
+
+      // Update user with shop_id
+      const updatedUser = { ...newUser, shop_id: newShop.id };
+      AuthAPI.updateUser(newUser.id, { shop_id: newShop.id });
+      
+      // Login the user
+      AuthAPI.login(email, password);
+      setUser(updatedUser);
+      
+      return true;
     } catch (error) {
       console.error('Registration error:', error);
       return false;
@@ -114,42 +98,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    try {
-      await firebaseSignOut();
-      setUser(null);
-      localStorage.removeItem('scaas_current_user');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    AuthAPI.logout();
+    setUser(null);
   }, []);
 
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
-    try {
-      const firebaseUser = await signInWithGoogle();
-      if (firebaseUser) {
-        // Firebase auth succeeded, user will be set by observer
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Google login error:', error);
-      return false;
-    }
-  }, []);
+    // Simulate Google OAuth - create a demo user
+    const email = `google_user_${Date.now()}@gmail.com`;
+    const password = 'google_oauth';
+    const name = 'Google User';
+    
+    return await register(email, password, name);
+  }, [register]);
 
   const loginWithApple = useCallback(async (): Promise<boolean> => {
-    try {
-      const firebaseUser = await signInWithApple();
-      if (firebaseUser) {
-        // Firebase auth succeeded, user will be set by observer
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Apple login error:', error);
-      return false;
-    }
-  }, []);
+    // Simulate Apple OAuth - create a demo user
+    const email = `apple_user_${Date.now()}@icloud.com`;
+    const password = 'apple_oauth';
+    const name = 'Apple User';
+    
+    return await register(email, password, name);
+  }, [register]);
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loginWithGoogle, loginWithApple, isLoading }}>
