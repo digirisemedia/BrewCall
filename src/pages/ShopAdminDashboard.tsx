@@ -267,6 +267,7 @@ export default function ShopAdminDashboard() {
 // Overview Tab
 // ==========================================
 function OverviewTab({ shop, categories, items, tables, requests, pendingRequests }: any) {
+  const { t } = useLanguage();
   const [stats, setStats] = useState({ pending: 0, today: 0, total: 0, resolved: 0 });
   
   useEffect(() => {
@@ -284,17 +285,17 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-400 text-sm mt-1">Welcome back! Here's what's happening at {shop?.name}.</p>
+        <h1 className="text-3xl font-bold">{t('shop.dashboard')}</h1>
+        <p className="text-gray-400 text-sm mt-1">{t('shop.welcomeBack')} {shop?.name}.</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Pending Requests', value: stats.pending, icon: Bell, color: 'from-red-500 to-orange-500' },
-          { label: 'Today\'s Requests', value: stats.today, icon: Clock, color: 'from-blue-500 to-indigo-500' },
-          { label: 'Menu Items', value: items.length, icon: UtensilsCrossed, color: 'from-emerald-500 to-teal-500' },
-          { label: 'Active Tables', value: tables.filter((t: Table) => t.is_active).length, icon: Grid3X3, color: 'from-violet-500 to-purple-500' },
+          { label: t('shop.pendingRequests'), value: stats.pending, icon: Bell, color: 'from-red-500 to-orange-500' },
+          { label: t('shop.todaysRequests'), value: stats.today, icon: Clock, color: 'from-blue-500 to-indigo-500' },
+          { label: t('shop.menuItems'), value: items.length, icon: UtensilsCrossed, color: 'from-emerald-500 to-teal-500' },
+          { label: t('shop.activeTables'), value: tables.filter((t: Table) => t.is_active).length, icon: Grid3X3, color: 'from-violet-500 to-purple-500' },
         ].map((stat, i) => (
           <div key={i} className="glass rounded-2xl p-5 card-hover animate-fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
             <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center mb-3 shadow-lg`}>
@@ -308,7 +309,7 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
 
       {/* Recent Activity */}
       <div className="glass rounded-2xl p-6">
-        <h3 className="font-bold text-lg mb-4">Recent Requests</h3>
+        <h3 className="font-bold text-lg mb-4">{t('shop.recentRequests')}</h3>
         {requests.slice(0, 5).map((req: ServiceRequest) => (
           <div key={req.id} className="flex items-center gap-3 py-3 border-b border-white/5 last:border-0">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
@@ -1034,8 +1035,8 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Menu Management</h1>
-          <p className="text-gray-400 text-sm mt-1">Organize your menu categories and items</p>
+          <h1 className="text-3xl font-bold">{t('shop.menuManagement')}</h1>
+          <p className="text-gray-400 text-sm mt-1">{t('shop.organizeMenu')}</p>
         </div>
       </div>
 
@@ -1364,8 +1365,8 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Tables & QR Codes</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage tables and generate QR codes for each</p>
+          <h1 className="text-3xl font-bold">{t('shop.tablesAndQR')}</h1>
+          <p className="text-gray-400 text-sm mt-1">{t('shop.manageTables')}</p>
         </div>
         <button
           onClick={() => setShowAddTable(true)}
@@ -1531,6 +1532,7 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 // Requests Tab (Live)
 // ==========================================
 function RequestsTab({ shop, pendingRequests, allRequests, onResolve, soundEnabled, onToggleSound }: any) {
+  const { t } = useLanguage();
   const sorted = [...pendingRequests].sort((a: ServiceRequest, b: ServiceRequest) => a.created_at - b.created_at);
 
   return (
@@ -1538,14 +1540,14 @@ function RequestsTab({ shop, pendingRequests, allRequests, onResolve, soundEnabl
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            Live Requests
+            {t('shop.liveRequests')}
             {pendingRequests.length > 0 && (
               <span className="w-8 h-8 bg-red-500 text-white text-sm font-bold rounded-full flex items-center justify-center animate-bounce-gentle">
                 {pendingRequests.length}
               </span>
             )}
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Real-time service requests from customers</p>
+          <p className="text-gray-400 text-sm mt-1">{t('shop.realtimeDesc')}</p>
         </div>
         <button
           onClick={onToggleSound}
