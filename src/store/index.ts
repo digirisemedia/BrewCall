@@ -251,7 +251,11 @@ export const ShopAPI = {
 
   async update(id: string, data: Partial<CoffeeShop>): Promise<CoffeeShop | undefined> {
     try {
-      await updateDoc(doc(db, 'shops', id), toFirestore(data));
+      console.log('Updating shop:', id, data);
+      const firestoreData = toFirestore(data);
+      console.log('Firestore data to update:', firestoreData);
+      await updateDoc(doc(db, 'shops', id), firestoreData);
+      console.log('Shop updated successfully');
       return await this.getById(id);
     } catch (error) {
       console.error('Error updating shop:', error);
