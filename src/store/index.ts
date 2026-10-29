@@ -254,9 +254,21 @@ export const ShopAPI = {
       console.log('Updating shop:', id, data);
       const firestoreData = toFirestore(data);
       console.log('Firestore data to update:', firestoreData);
-      await updateDoc(doc(db, 'shops', id), firestoreData);
-      console.log('Shop updated successfully');
-      return await this.getById(id);
+      
+      // Update in Firestore
+      const docRef = doc(db, 'shops', id);
+      await updateDoc(docRef, firestoreData);
+      console.log('Shop updated in Firestore');
+      
+      // Verify by reading it back
+      const updatedShop = await this.getById(id);
+      if (updatedShop) {
+        console.log('✓ Verification successful - shop updated in Firestore');
+        return updatedShop;
+      } else {
+        console.error('✗ Verification failed - shop not found after update');
+        return undefined;
+      }
     } catch (error) {
       console.error('Error updating shop:', error);
       return undefined;
@@ -314,8 +326,20 @@ export const CategoryAPI = {
       const newCat: MenuCategory = { ...cat, id: genId('cat') };
       const firestoreData = toFirestore(newCat);
       console.log('Firestore data to save:', firestoreData);
-      await setDoc(doc(db, 'categories', newCat.id), firestoreData);
-      console.log('Category created successfully:', newCat.id);
+      
+      // Write to Firestore
+      const docRef = doc(db, 'categories', newCat.id);
+      await setDoc(docRef, firestoreData);
+      console.log('Category written to Firestore:', newCat.id);
+      
+      // Verify the write by reading it back
+      const verifyDoc = await getDoc(docRef);
+      if (verifyDoc.exists()) {
+        console.log('✓ Verification successful - category exists in Firestore');
+      } else {
+        console.error('✗ Verification failed - category not found in Firestore after write');
+      }
+      
       return newCat;
     } catch (error) {
       console.error('Error creating category:', error);
@@ -361,8 +385,20 @@ export const ItemAPI = {
       };
       const firestoreData = toFirestore(newItem);
       console.log('Firestore data to save:', firestoreData);
-      await setDoc(doc(db, 'items', newItem.id), firestoreData);
-      console.log('Item created successfully:', newItem.id);
+      
+      // Write to Firestore
+      const docRef = doc(db, 'items', newItem.id);
+      await setDoc(docRef, firestoreData);
+      console.log('Item written to Firestore:', newItem.id);
+      
+      // Verify the write by reading it back
+      const verifyDoc = await getDoc(docRef);
+      if (verifyDoc.exists()) {
+        console.log('✓ Verification successful - item exists in Firestore');
+      } else {
+        console.error('✗ Verification failed - item not found in Firestore after write');
+      }
+      
       return newItem;
     } catch (error) {
       console.error('Error creating item:', error);
@@ -441,8 +477,20 @@ export const TableAPI = {
       };
       const firestoreData = toFirestore(newTable);
       console.log('Firestore data to save:', firestoreData);
-      await setDoc(doc(db, 'tables', newTable.id), firestoreData);
-      console.log('Table created successfully:', newTable.id);
+      
+      // Write to Firestore
+      const docRef = doc(db, 'tables', newTable.id);
+      await setDoc(docRef, firestoreData);
+      console.log('Table written to Firestore:', newTable.id);
+      
+      // Verify the write by reading it back
+      const verifyDoc = await getDoc(docRef);
+      if (verifyDoc.exists()) {
+        console.log('✓ Verification successful - table exists in Firestore');
+      } else {
+        console.error('✗ Verification failed - table not found in Firestore after write');
+      }
+      
       return newTable;
     } catch (error) {
       console.error('Error creating table:', error);

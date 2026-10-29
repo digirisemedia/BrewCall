@@ -372,13 +372,39 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
 
   const handleSave = async () => {
     if (!shop || !form) return;
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Saving changes...';
+    document.body.appendChild(loadingToast);
+    
     try {
-      await ShopAPI.update(shop.id, form);
-      setEditing(false);
-      onUpdate();
+      console.log('Starting save operation for shop:', shop.id);
+      console.log('Data to save:', form);
+      
+      const result = await ShopAPI.update(shop.id, form);
+      
+      if (result) {
+        console.log('Save successful, updated shop:', result);
+        loadingToast.textContent = '✓ Changes saved successfully!';
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          setEditing(false);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Update returned undefined');
+      }
     } catch (error) {
       console.error('Error saving shop:', error);
-      alert('Error saving changes. Please try again.');
+      loadingToast.textContent = '✗ Error saving changes. Please try again.';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
     }
   };
 
@@ -879,21 +905,60 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
 
   const addCategory = async () => {
     if (!newCatName) return;
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Creating category...';
+    document.body.appendChild(loadingToast);
+    
     try {
-      await CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
-      setNewCatName('');
-      setShowAddCategory(false);
-      onUpdate();
+      console.log('Creating category:', { shop_id: shop.id, name: newCatName, icon: newCatIcon });
+      const result = await CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
+      
+      if (result) {
+        console.log('Category created successfully:', result);
+        loadingToast.textContent = '✓ Category created!';
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setNewCatName('');
+        setNewCatIcon('☕');
+        setShowAddCategory(false);
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Category creation returned undefined');
+      }
     } catch (error) {
       console.error('Error creating category:', error);
-      alert('Error creating category. Please try again.');
+      loadingToast.textContent = '✗ Error creating category';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
     }
   };
 
   const addItem = async () => {
     if (!newItem.name || !newItem.price || !selectedCategory) return;
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Creating item...';
+    document.body.appendChild(loadingToast);
+    
     try {
-      await ItemAPI.create({
+      console.log('Creating item:', { 
+        shop_id: shop.id, 
+        category_id: selectedCategory, 
+        name: newItem.name,
+        price: parseFloat(newItem.price)
+      });
+      
+      const result = await ItemAPI.create({
         shop_id: shop.id,
         category_id: selectedCategory,
         name: newItem.name,
@@ -904,12 +969,31 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
         is_available: true,
         is_popular: newItem.is_popular,
       });
-      setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
-      setShowAddItem(false);
-      onUpdate();
+      
+      if (result) {
+        console.log('Item created successfully:', result);
+        loadingToast.textContent = '✓ Item created!';
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
+        setImagePreview('');
+        setShowAddItem(false);
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Item creation returned undefined');
+      }
     } catch (error) {
       console.error('Error creating item:', error);
-      alert('Error creating item. Please try again.');
+      loadingToast.textContent = '✗ Error creating item';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
     }
   };
 
@@ -1215,7 +1299,19 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
   const addTable = async () => {
     if (!newTable.table_number) return;
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Creating table...';
+    document.body.appendChild(loadingToast);
+    
     try {
+      console.log('Creating table:', { 
+        shop_id: shop.id, 
+        table_number: parseInt(newTable.table_number),
+        label: newTable.label
+      });
+      
       const newTableData = await TableAPI.create({
         shop_id: shop.id,
         table_number: parseInt(newTable.table_number),
@@ -1224,14 +1320,30 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
         location: newTable.location,
         is_active: true,
       });
-      setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
-      setShowAddTable(false);
-      onUpdate();
-      // Show success message with the new table
-      alert(`Table ${newTableData.table_number} created successfully! You can now view and test the QR code.`);
+      
+      if (newTableData) {
+        console.log('Table created successfully:', newTableData);
+        loadingToast.textContent = `✓ Table ${newTableData.table_number} created!`;
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
+        setShowAddTable(false);
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Table creation returned undefined');
+      }
     } catch (error) {
       console.error('Error creating table:', error);
-      alert('Error creating table. Please try again.');
+      loadingToast.textContent = '✗ Error creating table';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
     }
   };
 
