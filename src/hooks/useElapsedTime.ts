@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export function useElapsedTime(timestamp: number): string {
   const [elapsed, setElapsed] = useState('');
