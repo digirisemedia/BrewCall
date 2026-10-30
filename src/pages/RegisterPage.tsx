@@ -67,17 +67,17 @@ export default function RegisterPage() {
     }
 
     try {
-      // Register user with Firebase
-      const success = await register(formData.email, formData.password, formData.name);
+      // Register user with shop name
+      const success = await register(formData.email, formData.password, formData.name, formData.shopName);
       
       if (success) {
         // User registered successfully, redirect to dashboard
-        // Note: User will need to verify email before full access
         navigate('/dashboard');
       } else {
-        setError('Registration failed. Please try again.');
+        setError('Registration failed. Email may already be in use.');
       }
     } catch (err: any) {
+      console.error('Registration error:', err);
       setError(err.message || 'Registration failed. Please try again.');
     }
     

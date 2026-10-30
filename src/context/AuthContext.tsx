@@ -5,7 +5,7 @@ import { AuthAPI, seedInitialData, ShopAPI } from '../store';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string, shopName?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<boolean>;
   loginWithApple: () => Promise<boolean>;
@@ -40,19 +40,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const loggedIn = AuthAPI.login(email, password);
-    if (loggedIn) {
-      setUser(loggedIn);
-      return true;
+    try {
+      console.log('Attempting login for:', email);
+      const loggedIn = AuthAPI.login(email, password);
+      if (loggedIn) {
+        console.log('Login successful:', loggedIn.id);
+        setUser(loggedIn);
+        return true;
+      }
+      console.log('Login failed: User not found or incorrect password');
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name: string): Promise<boolean> => {
+  const register = useCallback(async (email: string, password: string, name: string, shopName?: string): Promise<boolean> => {
     try {
+      console.log('Starting registration for:', email);
+      
       // Check if user already exists
       const existingUser = AuthAPI.getUserByEmail(email);
       if (existingUser) {
+        console.error('User already exists:', email);
         return false;
       }
 
@@ -64,10 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: 'shop_admin',
         shop_id: null,
       });
+      console.log('User created:', newUser.id);
 
       // Automatically create a shop for the new user
+      const shopDisplayName = shopName || `${name}'s Coffee Shop`;
       const newShop = ShopAPI.create({
-        name: `${name}'s Coffee Shop`,
+        name: shopDisplayName,
         tagline: 'Welcome to our coffee shop!',
         description: '',
         address: '',
@@ -81,14 +94,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         wallet_balance: 0,
         payment_methods: [],
       });
+      console.log('Shop created:', newShop.id);
 
       // Update user with shop_id
-      const updatedUser = { ...newUser, shop_id: newShop.id };
       AuthAPI.updateUser(newUser.id, { shop_id: newShop.id });
+      console.log('User updated with shop_id');
+      
+      // Get the updated user and login
+      const updatedUser = AuthAPI.getUserByEmail(email);
+      if (!updatedUser) {
+        console.error('Failed to retrieve updated user');
+        return false;
+      }
       
       // Login the user
-      AuthAPI.login(email, password);
-      setUser(updatedUser);
+      const loggedInUser = AuthAPI.login(email, password);
+      if (!loggedInUser) {
+        console.error('Failed to login after registration');
+        return false;
+      }
+      
+      console.log('User logged in successfully:', loggedInUser.id);
+      setUser(loggedInUser);
       
       return true;
     } catch (error) {
