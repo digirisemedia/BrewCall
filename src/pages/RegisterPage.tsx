@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,9 +16,27 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register, loginWithGoogle, loginWithApple } = useAuth();
+  const { register, loginWithGoogle, user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  // Validate email format
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate password strength
+  const isPasswordStrong = (password: string): boolean => {
+    return password.length >= 6;
+  };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -30,10 +48,11 @@ export default function RegisterPage() {
       if (success) {
         navigate('/dashboard');
       } else {
-        setError('Registration failed');
+        setError('Google sign-in failed. Please try again.');
       }
     } catch (err) {
-      setError('Registration failed');
+      console.error('Google login error:', err);
+      setError('Google sign-in failed. Please try again.');
     }
     setIsLoading(false);
   };
@@ -41,30 +60,45 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
 
     if (step === 1) {
+      // Validate step 1
       if (!formData.name || !formData.email) {
         setError('Please fill in all required fields');
-        setIsLoading(false);
         return;
       }
+
+      if (!isValidEmail(formData.email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      if (formData.name.length < 2) {
+        setError('Name must be at least 2 characters');
+        return;
+      }
+
       setStep(2);
-      setIsLoading(false);
       return;
     }
 
+    // Validate step 2
     if (!formData.password || !formData.shopName) {
       setError('Please fill in all required fields');
-      setIsLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (!isPasswordStrong(formData.password)) {
       setError('Password must be at least 6 characters');
-      setIsLoading(false);
       return;
     }
+
+    if (formData.shopName.length < 2) {
+      setError('Shop name must be at least 2 characters');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       // Register user with shop name
@@ -74,7 +108,7 @@ export default function RegisterPage() {
         // User registered successfully, redirect to dashboard
         navigate('/dashboard');
       } else {
-        setError('Registration failed. Email may already be in use.');
+        setError('Registration failed. This email may already be in use.');
       }
     } catch (err: any) {
       console.error('Registration error:', err);
