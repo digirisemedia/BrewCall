@@ -1,6 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '../types';
-import { AuthAPI, seedInitialData, ShopAPI } from '../store';
+import { ShopAPI } from '../store';
+import { 
+  signInWithGoogle, 
+  signInWithEmail, 
+  signUpWithEmail, 
+  signOut as firebaseSignOut,
+  observeAuthState,
+  createOrGetUserDoc
+} from '../firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 interface AuthContextType {
   user: User | null;
@@ -19,38 +29,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Seed initial data (if not already seeded)
-        await seedInitialData();
+    // Listen to Firebase auth state changes
+    const unsubscribe = observeAuthState(async (firebaseUser) => {
+      if (firebaseUser) {
+        console.log('Firebase user logged in:', firebaseUser.email);
         
-        // Get current user from localStorage
-        const currentUser = AuthAPI.getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
+        // Get or create user document in Firestore
+        const userData = await createOrGetUserDoc(firebaseUser);
+        
+        // If user doesn't have a shop yet, create one
+        if (!userData.shop_id) {
+          const shopName = `${userData.displayName}'s Coffee Shop`;
+          const newShop = await ShopAPI.create({
+            name: shopName,
+            tagline: 'Welcome to our coffee shop!',
+            description: '',
+            address: '',
+            phone: '',
+            email: firebaseUser.email || '',
+            logo_emoji: '☕',
+            primary_color: '#8B4513',
+            owner_id: firebaseUser.uid,
+            is_active: true,
+            subscription_plan: 'free',
+            wallet_balance: 0,
+            payment_methods: [],
+          });
+          
+          // Update user with shop_id
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          await setDoc(userDocRef, { ...userData, shop_id: newShop.id }, { merge: true });
+          userData.shop_id = newShop.id;
         }
-      } catch (error) {
-        console.error('Error initializing app:', error);
-      } finally {
-        setIsLoading(false);
+        
+        // Convert to our User type
+        const appUser: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          password: '', // Not needed with Firebase Auth
+          name: userData.displayName || firebaseUser.displayName || '',
+          role: userData.role || 'shop_admin',
+          shop_id: userData.shop_id || null,
+          created_at: userData.created_at || Date.now(),
+        };
+        
+        setUser(appUser);
+      } else {
+        console.log('Firebase user logged out');
+        setUser(null);
       }
-    };
-    
-    initializeApp();
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      console.log('Attempting login for:', email);
-      const loggedIn = AuthAPI.login(email, password);
-      if (loggedIn) {
-        console.log('Login successful:', loggedIn.id);
-        setUser(loggedIn);
-        return true;
-      }
-      console.log('Login failed: User not found or incorrect password');
-      return false;
-    } catch (error) {
+      console.log('Attempting Firebase login for:', email);
+      await signInWithEmail(email, password);
+      // Auth state observer will handle setting the user
+      return true;
+    } catch (error: any) {
       console.error('Login error:', error);
       return false;
     }
@@ -58,28 +98,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (email: string, password: string, name: string, shopName?: string): Promise<boolean> => {
     try {
-      console.log('Starting registration for:', email);
+      console.log('Starting Firebase registration for:', email);
       
-      // Check if user already exists
-      const existingUser = AuthAPI.getUserByEmail(email);
-      if (existingUser) {
-        console.error('User already exists:', email);
-        return false;
-      }
-
-      // Create new user
-      const newUser = AuthAPI.createUser({
-        email,
-        password,
-        name,
-        role: 'shop_admin',
-        shop_id: null,
-      });
-      console.log('User created:', newUser.id);
-
-      // Automatically create a shop for the new user
+      // Create user with Firebase Auth
+      const firebaseUser = await signUpWithEmail(email, password, name);
+      console.log('Firebase user created:', firebaseUser.uid);
+      
+      // Create user document in Firestore
+      const userData = await createOrGetUserDoc(firebaseUser, shopName);
+      
+      // Create shop for the new user
       const shopDisplayName = shopName || `${name}'s Coffee Shop`;
-      const newShop = ShopAPI.create({
+      const newShop = await ShopAPI.create({
         name: shopDisplayName,
         tagline: 'Welcome to our coffee shop!',
         description: '',
@@ -88,64 +118,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         logo_emoji: '☕',
         primary_color: '#8B4513',
-        owner_id: newUser.id,
+        owner_id: firebaseUser.uid,
         is_active: true,
         subscription_plan: 'free',
         wallet_balance: 0,
         payment_methods: [],
       });
       console.log('Shop created:', newShop.id);
-
+      
       // Update user with shop_id
-      AuthAPI.updateUser(newUser.id, { shop_id: newShop.id });
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await setDoc(userDocRef, { ...userData, shop_id: newShop.id }, { merge: true });
       console.log('User updated with shop_id');
       
-      // Get the updated user and login
-      const updatedUser = AuthAPI.getUserByEmail(email);
-      if (!updatedUser) {
-        console.error('Failed to retrieve updated user');
-        return false;
-      }
-      
-      // Login the user
-      const loggedInUser = AuthAPI.login(email, password);
-      if (!loggedInUser) {
-        console.error('Failed to login after registration');
-        return false;
-      }
-      
-      console.log('User logged in successfully:', loggedInUser.id);
-      setUser(loggedInUser);
-      
+      // Auth state observer will handle setting the user
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
       return false;
     }
   }, []);
 
   const logout = useCallback(async () => {
-    AuthAPI.logout();
-    setUser(null);
+    try {
+      await firebaseSignOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   }, []);
 
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
-    // Simulate Google OAuth - create a demo user
-    const email = `google_user_${Date.now()}@gmail.com`;
-    const password = 'google_oauth';
-    const name = 'Google User';
-    
-    return await register(email, password, name);
-  }, [register]);
+    try {
+      console.log('Attempting Google sign-in');
+      await signInWithGoogle();
+      // Auth state observer will handle setting the user
+      return true;
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      return false;
+    }
+  }, []);
 
   const loginWithApple = useCallback(async (): Promise<boolean> => {
-    // Simulate Apple OAuth - create a demo user
-    const email = `apple_user_${Date.now()}@icloud.com`;
-    const password = 'apple_oauth';
-    const name = 'Apple User';
-    
-    return await register(email, password, name);
-  }, [register]);
+    // Apple sign-in not implemented yet
+    console.warn('Apple sign-in not implemented');
+    return false;
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loginWithGoogle, loginWithApple, isLoading }}>
