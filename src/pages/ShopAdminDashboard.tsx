@@ -38,6 +38,14 @@ export default function ShopAdminDashboard() {
     const init = async () => {
       setLoading(true);
       setError(null);
+      
+      if (!user?.shop_id) {
+        console.error('No shop_id found for user:', user);
+        setError('No shop found for your account. Please create a shop or contact support.');
+        setLoading(false);
+        return;
+      }
+      
       try {
         await loadData();
       } catch (err) {
@@ -88,7 +96,14 @@ export default function ShopAdminDashboard() {
       
       const s = await ShopAPI.getById(user.shop_id);
       console.log('Shop loaded:', s);
-      setShop(s || null);
+      
+      if (!s) {
+        console.error('Shop not found in Firestore for ID:', user.shop_id);
+        setError('Shop not found in database. Please contact support.');
+        return;
+      }
+      
+      setShop(s);
       
       const cats = await CategoryAPI.getByShop(user.shop_id);
       console.log('Categories loaded:', cats.length);
@@ -109,6 +124,8 @@ export default function ShopAdminDashboard() {
       const pending = await RequestAPI.getPendingByShop(user.shop_id);
       console.log('Pending requests:', pending.length);
       setPendingRequests(pending);
+      
+      console.log('All data loaded successfully for shop:', user.shop_id);
     } catch (error) {
       console.error('Error loading data:', error);
       throw error;

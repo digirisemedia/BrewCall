@@ -31,7 +31,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    // Use window.location to avoid HashRouter conflicts
+    window.location.hash = '#/login';
+    return null;
+  }
+  
   return <>{children}</>;
 }
 
