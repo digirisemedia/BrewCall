@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
@@ -56,8 +56,8 @@ export default function ContactPage() {
               </div>
               <h3 className="font-bold text-white mb-1">Email Us</h3>
               <p className="text-gray-400 text-sm mb-2">Our team is here to help.</p>
-              <a href="mailto:hello@brewcall.com" className="text-violet-400 hover:text-violet-300 text-sm font-medium">
-                hello@brewcall.com
+              <a href="mailto:contact@brewcallapp.com" className="text-violet-400 hover:text-violet-300 text-sm font-medium">
+                contact@brewcallapp.com
               </a>
             </div>
 
@@ -79,8 +79,8 @@ export default function ContactPage() {
               <h3 className="font-bold text-white mb-1">Visit Us</h3>
               <p className="text-gray-400 text-sm mb-2">Come say hello.</p>
               <p className="text-amber-400 text-sm font-medium">
-                42 Boulevard Mohammed V<br />
-                Casablanca, Morocco
+                Agdal, Rabat<br />
+                Morocco
               </p>
             </div>
           </div>

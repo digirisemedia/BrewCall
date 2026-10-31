@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
@@ -30,12 +31,12 @@ export default function PrivacyPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
             {t('footer.privacy')}
           </h1>
-          <p className="text-gray-400 text-sm mb-8">Last updated: January 2024</p>
+          <p className="text-gray-400 text-sm mb-8">Last updated: January 2024 | Compliant with Moroccan Law 09-08</p>
 
           <div className="prose prose-invert max-w-none space-y-6 text-gray-300 text-sm leading-relaxed">
             <section>
               <h2 className="text-xl font-bold text-white mb-3">1. Introduction</h2>
-              <p>BrewCall ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our SaaS platform for coffee shop management.</p>
+              <p>BrewCall ("we," "our," or "us") is committed to protecting your privacy in accordance with Moroccan Law n° 09-08 relating to the protection of individuals with regard to the processing of personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our SaaS platform for coffee shop management. We are registered with the CNDP (Commission Nationale de contrôle de la protection des Données à caractère Personnel).</p>
             </section>
 
             <section>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -34,59 +34,81 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     loadShops();
-    return subscribeToChanges(loadShops);
+    const interval = setInterval(loadShops, 2000); // Poll every 2 seconds
+    return () => clearInterval(interval);
   }, []);
 
-  const loadShops = () => {
-    setShops(ShopAPI.getAll());
+  const loadShops = async () => {
+    try {
+      const allShops = await ShopAPI.getAll();
+      setShops(allShops);
+    } catch (error) {
+      console.error('Error loading shops:', error);
+    }
   };
 
-  const handleCreateShop = () => {
+  const handleCreateShop = async () => {
     if (!newShop.name || !newShop.ownerEmail || !newShop.ownerName) return;
 
-    // Create shop owner user
-    const owner = AuthAPI.createUser({
-      email: newShop.ownerEmail,
-      password: newShop.ownerPassword,
-      name: newShop.ownerName,
-      role: 'shop_admin',
-      shop_id: null, // will be updated
-    });
+    try {
+      // Create shop owner user
+      const owner = await AuthAPI.createUser({
+        email: newShop.ownerEmail,
+        password: newShop.ownerPassword,
+        name: newShop.ownerName,
+        role: 'shop_admin',
+        shop_id: null, // will be updated
+      });
 
-    // Create shop
-    const shop = ShopAPI.create({
-      name: newShop.name,
-      tagline: newShop.tagline,
-      description: newShop.description,
-      address: newShop.address,
-      phone: newShop.phone,
-      email: newShop.email,
-      logo_emoji: newShop.logo_emoji,
-      primary_color: newShop.primary_color,
-      owner_id: owner.id,
-      is_active: true,
-      subscription_plan: 'free',
-      wallet_balance: 0,
-      payment_methods: [],
-    });
+      // Create shop
+      const shop = await ShopAPI.create({
+        name: newShop.name,
+        tagline: newShop.tagline,
+        description: newShop.description,
+        address: newShop.address,
+        phone: newShop.phone,
+        email: newShop.email,
+        logo_emoji: newShop.logo_emoji,
+        primary_color: newShop.primary_color,
+        owner_id: owner.id,
+        is_active: true,
+        subscription_plan: 'free',
+        wallet_balance: 0,
+        payment_methods: [],
+      });
 
-    // Update owner with shop_id
-    const users = AuthAPI.getAllUsers();
-    const updatedUsers = users.map((u) =>
-      u.id === owner.id ? { ...u, shop_id: shop.id } : u
-    );
-    localStorage.setItem('scaas_users', JSON.stringify(updatedUsers));
+      // Update owner with shop_id
+      const users = await AuthAPI.getAllUsers();
+      const updatedUsers = users.map((u) =>
+        u.id === owner.id ? { ...u, shop_id: shop.id } : u
+      );
+      
+      // Update each user in Firestore
+      for (const user of updatedUsers) {
+        await AuthAPI.createUser(user);
+      }
 
-    setShowCreateModal(false);
-    setNewShop({
-      name: '', tagline: '', description: '', address: '', phone: '', email: '',
-      ownerEmail: '', ownerName: '', ownerPassword: 'owner123', logo_emoji: '☕', primary_color: '#8B4513',
-    });
+      setShowCreateModal(false);
+      setNewShop({
+        name: '', tagline: '', description: '', address: '', phone: '', email: '',
+        ownerEmail: '', ownerName: '', ownerPassword: 'owner123', logo_emoji: '☕', primary_color: '#8B4513',
+      });
+      
+      loadShops(); // Reload shops after creation
+    } catch (error) {
+      console.error('Error creating shop:', error);
+      alert('Error creating shop. Please try again.');
+    }
   };
 
-  const handleDeleteShop = (shopId: string) => {
-    ShopAPI.delete(shopId);
-    setDeleteConfirm(null);
+  const handleDeleteShop = async (shopId: string) => {
+    try {
+      await ShopAPI.delete(shopId);
+      setDeleteConfirm(null);
+      loadShops(); // Reload shops after deletion
+    } catch (error) {
+      console.error('Error deleting shop:', error);
+    }
   };
 
   const filteredShops = shops.filter(
@@ -103,14 +125,36 @@ export default function SuperAdminDashboard() {
   const lastMonthRevenue = totalRevenue * 0.85; // Simulated
   const growth = lastMonthRevenue > 0 ? ((totalRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
-  const topShops = shops
-    .map(shop => ({
-      id: shop.id,
-      name: shop.name,
-      requests_today: RequestAPI.getStats(shop.id).today,
-    }))
-    .sort((a, b) => b.requests_today - a.requests_today)
-    .slice(0, 5);
+  const [topShops, setTopShops] = useState<Array<{id: string, name: string, requests_today: number}>>([]);
+  
+  useEffect(() => {
+    const loadTopShops = async () => {
+      try {
+        const shopsWithStats = await Promise.all(
+          shops.map(async (shop) => {
+            const stats = await RequestAPI.getStats(shop.id);
+            return {
+              id: shop.id,
+              name: shop.name,
+              requests_today: stats.today,
+            };
+          })
+        );
+        
+        const sorted = shopsWithStats
+          .sort((a, b) => b.requests_today - a.requests_today)
+          .slice(0, 5);
+        
+        setTopShops(sorted);
+      } catch (error) {
+        console.error('Error loading top shops:', error);
+      }
+    };
+    
+    if (shops.length > 0) {
+      loadTopShops();
+    }
+  }, [shops]);
 
   const recentActivities = [
     {

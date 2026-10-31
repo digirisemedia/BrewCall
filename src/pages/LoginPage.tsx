@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -11,35 +11,66 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, loginWithGoogle, loginWithApple } = useAuth();
+  const { login, loginWithGoogle, user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  // Validate email format
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validate inputs
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
     setIsLoading(true);
     
-    const success = await login(email, password);
-    if (success) {
-      navigate('/dashboard');
-    } else {
-      setError(t('login.invalid'));
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError('An error occurred during login. Please try again.');
     }
+    
     setIsLoading(false);
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'apple') => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError('');
     
     try {
-      let success = false;
-      if (provider === 'google') {
-        success = await loginWithGoogle();
-      } else {
-        success = await loginWithApple();
-      }
+      const success = await loginWithGoogle();
       
       if (success) {
         navigate('/dashboard');
@@ -47,21 +78,6 @@ export default function LoginPage() {
         setError(t('login.invalid'));
       }
     } catch (err) {
-      setError(t('login.invalid'));
-    }
-    setIsLoading(false);
-  };
-
-  const quickLogin = async (em: string, pw: string) => {
-    setEmail(em);
-    setPassword(pw);
-    setError('');
-    setIsLoading(true);
-    
-    const success = await login(em, pw);
-    if (success) {
-      navigate('/dashboard');
-    } else {
       setError(t('login.invalid'));
     }
     setIsLoading(false);
@@ -161,7 +177,7 @@ export default function LoginPage() {
           {/* Social Login Buttons - Now Below Email Form */}
           <div className="space-y-3">
             <button
-              onClick={() => handleSocialLogin('google')}
+              onClick={handleGoogleLogin}
               disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 py-3 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -173,32 +189,9 @@ export default function LoginPage() {
               </svg>
               {t('register.continueGoogle')}
             </button>
-
-            <button
-              onClick={() => handleSocialLogin('apple')}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 bg-black hover:bg-gray-900 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-              </svg>
-              {t('register.continueApple')}
-            </button>
           </div>
 
-          {/* Demo Account */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-xs text-gray-500 text-center mb-4 font-medium uppercase tracking-wider">{t('login.quickDemo')}</p>
-            <button
-              onClick={() => quickLogin('owner@aroma.coffee', 'owner123')}
-              className="w-full p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-start group"
-            >
-              <p className="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">{t('landing.shopOwner')}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Aroma Coffee House</p>
-            </button>
-          </div>
-
-          <div className="mt-6 text-center text-sm text-gray-400">
+          <div className="mt-8 text-center text-sm text-gray-400">
             {t('register.haveAccount')}{' '}
             <Link to="/register" className="text-violet-400 hover:text-violet-300 font-medium">
               {t('register.createAccount')}

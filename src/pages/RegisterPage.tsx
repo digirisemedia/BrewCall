@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,29 +16,43 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithGoogle, loginWithApple } = useAuth();
+  const { register, loginWithGoogle, user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const handleSocialLogin = async (provider: 'google' | 'apple') => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  // Validate email format
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate password strength
+  const isPasswordStrong = (password: string): boolean => {
+    return password.length >= 6;
+  };
+
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError('');
     
     try {
-      let success = false;
-      if (provider === 'google') {
-        success = await loginWithGoogle();
-      } else {
-        success = await loginWithApple();
-      }
+      const success = await loginWithGoogle();
       
       if (success) {
         navigate('/dashboard');
       } else {
-        setError('Registration failed');
+        setError('Google sign-in failed. Please try again.');
       }
     } catch (err) {
-      setError('Registration failed');
+      console.error('Google login error:', err);
+      setError('Google sign-in failed. Please try again.');
     }
     setIsLoading(false);
   };
@@ -46,33 +60,61 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
 
     if (step === 1) {
+      // Validate step 1
       if (!formData.name || !formData.email) {
         setError('Please fill in all required fields');
-        setIsLoading(false);
         return;
       }
+
+      if (!isValidEmail(formData.email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      if (formData.name.length < 2) {
+        setError('Name must be at least 2 characters');
+        return;
+      }
+
       setStep(2);
-      setIsLoading(false);
       return;
     }
 
+    // Validate step 2
     if (!formData.password || !formData.shopName) {
       setError('Please fill in all required fields');
-      setIsLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (!isPasswordStrong(formData.password)) {
       setError('Password must be at least 6 characters');
-      setIsLoading(false);
       return;
     }
 
-    await new Promise((r) => setTimeout(r, 600));
-    navigate('/dashboard');
+    if (formData.shopName.length < 2) {
+      setError('Shop name must be at least 2 characters');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Register user with shop name
+      const success = await register(formData.email, formData.password, formData.name, formData.shopName);
+      
+      if (success) {
+        // User registered successfully, redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        setError('Registration failed. This email may already be in use.');
+      }
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'Registration failed. Please try again.');
+    }
+    
     setIsLoading(false);
   };
 
@@ -229,7 +271,7 @@ export default function RegisterPage() {
           {/* Social Login Buttons - Now Below Email Form */}
           <div className="space-y-3">
             <button
-              onClick={() => handleSocialLogin('google')}
+              onClick={handleGoogleLogin}
               disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 py-3 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -240,17 +282,6 @@ export default function RegisterPage() {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
               {t('register.continueGoogle')}
-            </button>
-
-            <button
-              onClick={() => handleSocialLogin('apple')}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 bg-black hover:bg-gray-900 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-              </svg>
-              {t('register.continueApple')}
             </button>
           </div>
 

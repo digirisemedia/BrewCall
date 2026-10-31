@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
@@ -24,57 +24,65 @@ export default function CustomerView() {
 
   useEffect(() => {
     loadData();
-    return subscribeToChanges(loadData);
+    const interval = setInterval(loadData, 2000); // Poll every 2 seconds for real-time updates
+    return () => clearInterval(interval);
   }, [shopId, tableId]);
 
-  const loadData = () => {
+  const loadData = async () => {
     if (!shopId || !tableId) {
       setLoading(false);
       return;
     }
     
-    const s = ShopAPI.getById(shopId);
-    const tbl = TableAPI.getById(tableId);
-    
-    // Validate shop exists and is active
-    if (!s || !s.is_active) {
-      setShop(null);
-      setTable(null);
-      setLoading(false);
-      return;
-    }
-    
-    // Validate table exists and belongs to this shop
-    if (!tbl || tbl.shop_id !== shopId) {
-      setShop(s);
-      setTable(null);
-      setLoading(false);
-      return;
-    }
-    
-    setShop(s);
-    setTable(tbl);
-    
-    // Load menu data
-    const cats = CategoryAPI.getByShop(shopId).filter((c) => c.is_active);
-    setCategories(cats);
-    
-    // Set active category to first available if not set or invalid
-    if (cats.length > 0) {
-      if (!activeCategory || !cats.find(c => c.id === activeCategory)) {
-        setActiveCategory(cats[0].id);
+    try {
+      const s = await ShopAPI.getById(shopId);
+      const tbl = await TableAPI.getById(tableId);
+      
+      // Validate shop exists and is active
+      if (!s || !s.is_active) {
+        setShop(null);
+        setTable(null);
+        setLoading(false);
+        return;
       }
+      
+      // Validate table exists and belongs to this shop
+      if (!tbl || tbl.shop_id !== shopId) {
+        setShop(s);
+        setTable(null);
+        setLoading(false);
+        return;
+      }
+      
+      setShop(s);
+      setTable(tbl);
+      
+      // Load menu data
+      const allCats = await CategoryAPI.getByShop(shopId);
+      const cats = allCats.filter((c) => c.is_active);
+      setCategories(cats);
+      
+      // Set active category to first available if not set or invalid
+      if (cats.length > 0) {
+        if (!activeCategory || !cats.find(c => c.id === activeCategory)) {
+          setActiveCategory(cats[0].id);
+        }
+      }
+      
+      // Load available items for this shop
+      const allItems = await ItemAPI.getByShop(shopId);
+      const shopItems = allItems.filter((i) => i.is_available);
+      setItems(shopItems);
+      
+      // Check for active request
+      const activeReq = await RequestAPI.getActiveForTable(shopId, tableId);
+      setActiveRequest(activeReq);
+      
+    } catch (error) {
+      console.error('Error loading ', error);
+    } finally {
+      setLoading(false);
     }
-    
-    // Load available items for this shop
-    const shopItems = ItemAPI.getByShop(shopId).filter((i) => i.is_available);
-    setItems(shopItems);
-    
-    // Check for active request
-    const activeReq = RequestAPI.getActiveForTable(shopId, tableId);
-    setActiveRequest(activeReq);
-    
-    setLoading(false);
   };
 
   const handleServiceRequest = useCallback(

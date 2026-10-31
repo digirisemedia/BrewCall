@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, WalletAPI, subscribeToChanges } from '../store';
+import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { useElapsedTime } from '../hooks/useElapsedTime';
 import { playNotificationSound, playSuccessSound, startContinuousAlert, stopContinuousAlert } from '../utils/audio';
@@ -12,7 +12,7 @@ import { CurrencySwitcher } from '../components/CurrencySwitcher';
 import {
   LogOut, LayoutDashboard, Store, UtensilsCrossed, Grid3X3, Bell,
   Plus, Trash2, Edit3, X, Check, QrCode, Eye, EyeOff, Clock, Image,
-  Wallet, TrendingUp, TrendingDown
+  Wallet
 } from 'lucide-react';
 
 type Tab = 'overview' | 'profile' | 'menu' | 'tables' | 'requests';
@@ -31,10 +31,27 @@ export default function ShopAdminDashboard() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const prevPendingCount = useState(0);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    loadData();
-    return subscribeToChanges(loadData);
-  }, []);
+    const init = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await loadData();
+      } catch (err) {
+        console.error('Failed to load data:', err);
+        setError('Failed to load data. Please refresh the page.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    init();
+    const interval = setInterval(loadData, 3000); // Poll every 3 seconds for real-time updates
+    return () => clearInterval(interval);
+  }, [user?.shop_id]);
 
   useEffect(() => {
     if (pendingRequests.length > prevPendingCount[0] && soundEnabled && activeTab === 'requests') {
@@ -60,15 +77,42 @@ export default function ShopAdminDashboard() {
     };
   }, [activeTab]);
 
-  const loadData = () => {
-    if (!user?.shop_id) return;
-    const s = ShopAPI.getById(user.shop_id);
-    setShop(s || null);
-    setCategories(CategoryAPI.getByShop(user.shop_id));
-    setItems(ItemAPI.getByShop(user.shop_id));
-    setTables(TableAPI.getByShop(user.shop_id));
-    setRequests(RequestAPI.getByShop(user.shop_id));
-    setPendingRequests(RequestAPI.getPendingByShop(user.shop_id));
+  const loadData = async () => {
+    if (!user?.shop_id) {
+      console.warn('No shop_id found for user');
+      return;
+    }
+    
+    try {
+      console.log('Loading data for shop:', user.shop_id);
+      
+      const s = await ShopAPI.getById(user.shop_id);
+      console.log('Shop loaded:', s);
+      setShop(s || null);
+      
+      const cats = await CategoryAPI.getByShop(user.shop_id);
+      console.log('Categories loaded:', cats.length);
+      setCategories(cats);
+      
+      const its = await ItemAPI.getByShop(user.shop_id);
+      console.log('Items loaded:', its.length);
+      setItems(its);
+      
+      const tbls = await TableAPI.getByShop(user.shop_id);
+      console.log('Tables loaded:', tbls.length);
+      setTables(tbls);
+      
+      const reqs = await RequestAPI.getByShop(user.shop_id);
+      console.log('Requests loaded:', reqs.length);
+      setRequests(reqs);
+      
+      const pending = await RequestAPI.getPendingByShop(user.shop_id);
+      console.log('Pending requests:', pending.length);
+      setPendingRequests(pending);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      throw error;
+    }
   };
 
   const tabs = [
@@ -78,6 +122,35 @@ export default function ShopAdminDashboard() {
     { id: 'tables' as Tab, label: t('shop.tables'), icon: Grid3X3 },
     { id: 'profile' as Tab, label: t('shop.profile'), icon: Store },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center p-4">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 max-w-md text-center">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-red-400 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-violet-600 hover:bg-violet-700 rounded-xl font-semibold transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white flex">
@@ -176,7 +249,11 @@ export default function ShopAdminDashboard() {
             shop={shop}
             pendingRequests={pendingRequests}
             allRequests={requests}
-            onResolve={(id: string) => { RequestAPI.resolve(id); playSuccessSound(); loadData(); }}
+            onResolve={async (id: string) => { 
+              await RequestAPI.resolve(id); 
+              playSuccessSound(); 
+              loadData(); 
+            }}
             soundEnabled={soundEnabled}
             onToggleSound={() => setSoundEnabled(!soundEnabled)}
           />
@@ -190,22 +267,35 @@ export default function ShopAdminDashboard() {
 // Overview Tab
 // ==========================================
 function OverviewTab({ shop, categories, items, tables, requests, pendingRequests }: any) {
-  const stats = shop ? RequestAPI.getStats(shop.id) : { pending: 0, today: 0, total: 0, resolved: 0 };
+  const { t } = useLanguage();
+  const [stats, setStats] = useState({ pending: 0, today: 0, total: 0, resolved: 0 });
+  
+  useEffect(() => {
+    const loadStats = async () => {
+      if (shop) {
+        const s = await RequestAPI.getStats(shop.id);
+        setStats(s);
+      }
+    };
+    loadStats();
+    const interval = setInterval(loadStats, 2000);
+    return () => clearInterval(interval);
+  }, [shop]);
 
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-400 text-sm mt-1">Welcome back! Here's what's happening at {shop?.name}.</p>
+        <h1 className="text-3xl font-bold">{t('shop.dashboard')}</h1>
+        <p className="text-gray-400 text-sm mt-1">{t('shop.welcomeBack')} {shop?.name}.</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Pending Requests', value: stats.pending, icon: Bell, color: 'from-red-500 to-orange-500' },
-          { label: 'Today\'s Requests', value: stats.today, icon: Clock, color: 'from-blue-500 to-indigo-500' },
-          { label: 'Menu Items', value: items.length, icon: UtensilsCrossed, color: 'from-emerald-500 to-teal-500' },
-          { label: 'Active Tables', value: tables.filter((t: Table) => t.is_active).length, icon: Grid3X3, color: 'from-violet-500 to-purple-500' },
+          { label: t('shop.pendingRequests'), value: stats.pending, icon: Bell, color: 'from-red-500 to-orange-500' },
+          { label: t('shop.todaysRequests'), value: stats.today, icon: Clock, color: 'from-blue-500 to-indigo-500' },
+          { label: t('shop.menuItems'), value: items.length, icon: UtensilsCrossed, color: 'from-emerald-500 to-teal-500' },
+          { label: t('shop.activeTables'), value: tables.filter((t: Table) => t.is_active).length, icon: Grid3X3, color: 'from-violet-500 to-purple-500' },
         ].map((stat, i) => (
           <div key={i} className="glass rounded-2xl p-5 card-hover animate-fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
             <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center mb-3 shadow-lg`}>
@@ -219,7 +309,7 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
 
       {/* Recent Activity */}
       <div className="glass rounded-2xl p-6">
-        <h3 className="font-bold text-lg mb-4">Recent Requests</h3>
+        <h3 className="font-bold text-lg mb-4">{t('shop.recentRequests')}</h3>
         {requests.slice(0, 5).map((req: ServiceRequest) => (
           <div key={req.id} className="flex items-center gap-3 py-3 border-b border-white/5 last:border-0">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
@@ -254,26 +344,56 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
   const { formatPrice, t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CoffeeShop | null>(null);
-  const [showTopUp, setShowTopUp] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState('');
   const [newPayment, setNewPayment] = useState<{ type: 'cash_plus' | 'bank_transfer' | 'credit_card' | 'paypal'; label: string; details: string }>({
     type: 'cash_plus',
     label: '',
     details: '',
   });
 
+  // Initialize form only once when shop is first loaded
   useEffect(() => {
-    if (shop) {
+    if (shop && !form) {
       setForm({ ...shop });
     }
-  }, [shop]);
+  }, [shop, form]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!shop || !form) return;
-    ShopAPI.update(shop.id, form);
-    setEditing(false);
-    onUpdate();
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Saving changes...';
+    document.body.appendChild(loadingToast);
+    
+    try {
+      console.log('Starting save operation for shop:', shop.id);
+      console.log('Data to save:', form);
+      
+      const result = await ShopAPI.update(shop.id, form);
+      
+      if (result) {
+        console.log('Save successful, updated shop:', result);
+        loadingToast.textContent = '✓ Changes saved successfully!';
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          setEditing(false);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Update returned undefined');
+      }
+    } catch (error) {
+      console.error('Error saving shop:', error);
+      loadingToast.textContent = '✗ Error saving changes. Please try again.';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
+    }
   };
 
   const handleCancel = () => {
@@ -283,38 +403,37 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     setEditing(false);
   };
 
-  const handleTopUp = () => {
-    if (!shop || !topUpAmount) return;
-    const amount = parseFloat(topUpAmount);
-    if (amount <= 0) return;
-    
-    const defaultMethod = shop.payment_methods.find(m => m.is_default);
-    WalletAPI.topUp(shop.id, amount, defaultMethod?.type);
-    setTopUpAmount('');
-    setShowTopUp(false);
-    onUpdate();
-  };
-
-  const handleAddPayment = () => {
+  const handleAddPayment = async () => {
     if (!shop || !newPayment.label) return;
-    WalletAPI.addPaymentMethod(shop.id, {
-      ...newPayment,
-      is_default: shop.payment_methods.length === 0,
-    });
-    setNewPayment({ type: 'cash_plus', label: '', details: '' });
-    setShowAddPayment(false);
-    onUpdate();
+    try {
+      const updatedMethods = [...(shop.payment_methods || []), {
+        id: `pm_${Date.now()}`,
+        ...newPayment,
+        is_default: shop.payment_methods.length === 0,
+      }];
+      await ShopAPI.update(shop.id, { payment_methods: updatedMethods });
+      setNewPayment({ type: 'cash_plus', label: '', details: '' });
+      setShowAddPayment(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      alert('Error adding payment method. Please try again.');
+    }
   };
 
-  const handleRemovePayment = (methodId: string) => {
+  const handleRemovePayment = async (methodId: string) => {
     if (!shop) return;
-    WalletAPI.removePaymentMethod(shop.id, methodId);
-    onUpdate();
+    try {
+      const updatedMethods = (shop.payment_methods || []).filter(m => m.id !== methodId);
+      await ShopAPI.update(shop.id, { payment_methods: updatedMethods });
+      onUpdate();
+    } catch (error) {
+      console.error('Error removing payment method:', error);
+      alert('Error removing payment method. Please try again.');
+    }
   };
 
   if (!shop || !form) return null;
-
-  const transactions = WalletAPI.getTransactions(shop.id);
 
   return (
     <div className="animate-fade-in max-w-2xl">
@@ -492,28 +611,13 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           </div>
         </div>
 
-        {/* Wallet & Payment */}
+        {/* Payment Methods */}
         <div className="pt-4 border-t border-white/5">
           <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
             <Wallet className="w-4 h-4 text-emerald-400" />
-            {t('shop.walletPayment')}
+            {t('shop.paymentMethods')}
           </h3>
           
-          {/* Wallet Balance */}
-          <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">{t('shop.currentBalance')}</span>
-              <button
-                onClick={() => setShowTopUp(true)}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
-              >
-                + {t('shop.topUp')}
-              </button>
-            </div>
-            <p className="text-3xl font-bold text-emerald-400">{formatPrice(shop.wallet_balance)}</p>
-          </div>
-
-          {/* Payment Methods */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-gray-400">{t('shop.paymentMethods')}</span>
@@ -555,38 +659,6 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
               )}
             </div>
           </div>
-
-          {/* Recent Transactions */}
-          <div>
-            <span className="text-xs font-medium text-gray-400 mb-3 block">{t('shop.recentTransactions')}</span>
-            <div className="space-y-2">
-              {transactions.slice(0, 5).map((txn) => (
-                <div key={txn.id} className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
-                  <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                    txn.type === 'top_up' ? 'bg-emerald-500/20' : 'bg-red-500/20'
-                  }`}>
-                    {txn.type === 'top_up' ? (
-                      <TrendingUp className="w-3 h-3 text-emerald-400" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 text-red-400" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{txn.description}</p>
-                    <p className="text-[10px] text-gray-500">{new Date(txn.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <span className={`text-xs font-bold ${
-                    txn.type === 'top_up' ? 'text-emerald-400' : 'text-red-400'
-                  }`}>
-                    {txn.type === 'top_up' ? '+' : '-'}{formatPrice(txn.amount)}
-                  </span>
-                </div>
-              ))}
-              {transactions.length === 0 && (
-                <p className="text-xs text-gray-500 text-center py-2">No transactions yet</p>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Subscription */}
@@ -602,53 +674,6 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           </div>
         </div>
       </div>
-
-      {/* Top-Up Modal */}
-      {showTopUp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowTopUp(false)}>
-          <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">{t('shop.topUp')}</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.amount')} ({t('currency.symbol')})</label>
-                <input
-                  type="number"
-                  value={topUpAmount}
-                  onChange={(e) => setTopUpAmount(e.target.value)}
-                  className="input-dark"
-                  placeholder="100"
-                  min="1"
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[50, 100, 200].map((amount) => (
-                  <button
-                    key={amount}
-                    onClick={() => setTopUpAmount(amount.toString())}
-                    className="py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    {amount} MAD
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowTopUp(false)}
-                  className="flex-1 py-2.5 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  onClick={handleTopUp}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-700 transition-all"
-                >
-                  {t('shop.topUp')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add Payment Method Modal */}
       {showAddPayment && (
@@ -765,54 +790,136 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
 
   const addCategory = () => {
     if (!newCatName) return;
-    CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
-    setNewCatName('');
-    setShowAddCategory(false);
-    onUpdate();
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Creating category...';
+    document.body.appendChild(loadingToast);
+    
+    try {
+      console.log('Creating category:', { shop_id: shop.id, name: newCatName, icon: newCatIcon });
+      const result = CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
+      
+      if (result) {
+        console.log('Category created successfully:', result);
+        loadingToast.textContent = '✓ Category created!';
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setNewCatName('');
+        setNewCatIcon('☕');
+        setShowAddCategory(false);
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Category creation returned undefined');
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      loadingToast.textContent = '✗ Error creating category';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
+    }
   };
 
   const addItem = () => {
     if (!newItem.name || !newItem.price || !selectedCategory) return;
-    ItemAPI.create({
-      shop_id: shop.id,
-      category_id: selectedCategory,
-      name: newItem.name,
-      description: newItem.description,
-      price: parseFloat(newItem.price),
-      image_emoji: newItem.image_emoji,
-      image_url: newItem.image_url || undefined,
-      is_available: true,
-      is_popular: newItem.is_popular,
-    });
-    setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
-    setShowAddItem(false);
-    onUpdate();
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Creating item...';
+    document.body.appendChild(loadingToast);
+    
+    try {
+      console.log('Creating item:', { 
+        shop_id: shop.id, 
+        category_id: selectedCategory, 
+        name: newItem.name,
+        price: parseFloat(newItem.price)
+      });
+      
+      const result = ItemAPI.create({
+        shop_id: shop.id,
+        category_id: selectedCategory,
+        name: newItem.name,
+        description: newItem.description,
+        price: parseFloat(newItem.price),
+        image_emoji: newItem.image_emoji,
+        image_url: newItem.image_url || undefined,
+        is_available: true,
+        is_popular: newItem.is_popular,
+      });
+      
+      if (result) {
+        console.log('Item created successfully:', result);
+        loadingToast.textContent = '✓ Item created!';
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
+        setImagePreview('');
+        setShowAddItem(false);
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Item creation returned undefined');
+      }
+    } catch (error) {
+      console.error('Error creating item:', error);
+      loadingToast.textContent = '✗ Error creating item';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
+    }
   };
 
   const toggleItemAvailability = (itemId: string, current: boolean) => {
-    ItemAPI.update(itemId, { is_available: !current });
-    onUpdate();
-  };
-
-  const deleteItem = (itemId: string) => {
-    ItemAPI.delete(itemId);
-    onUpdate();
-  };
-
-  const deleteCategory = (catId: string) => {
-    CategoryAPI.delete(catId);
-    if (selectedCategory === catId && categories.length > 1) {
-      setSelectedCategory(categories.find((c) => c.id !== catId)?.id || '');
+    try {
+      ItemAPI.update(itemId, { is_available: !current });
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('Error updating item. Please try again.');
     }
-    onUpdate();
   };
-
+  
+  const deleteItem = (itemId: string) => {
+    try {
+      ItemAPI.delete(itemId);
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert('Error deleting item. Please try again.');
+    }
+  };
+  
+  const deleteCategory = (catId: string) => {
+    try {
+      CategoryAPI.delete(catId);
+      if (selectedCategory === catId && categories.length > 1) {
+        setSelectedCategory(categories.find((c) => c.id !== catId)?.id || '');
+      }
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert('Error deleting category. Please try again.');
+    }
+  };
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Menu Management</h1>
-          <p className="text-gray-400 text-sm mt-1">Organize your menu categories and items</p>
+          <h1 className="text-3xl font-bold">{t('shop.menuManagement')}</h1>
+          <p className="text-gray-400 text-sm mt-1">{t('shop.organizeMenu')}</p>
         </div>
       </div>
 
@@ -1074,38 +1181,74 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
   if (!shop) return null;
 
-  const addTable = () => {
+  const addTable = async () => {
     if (!newTable.table_number) return;
-    const newTableData = TableAPI.create({
-      shop_id: shop.id,
-      table_number: parseInt(newTable.table_number),
-      label: newTable.label || `Table ${newTable.table_number}`,
-      seats: parseInt(newTable.seats) || 2,
-      location: newTable.location,
-      is_active: true,
-    });
-    setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
-    setShowAddTable(false);
-    onUpdate();
-    // Show success message with the new table
-    alert(`Table ${newTableData.table_number} created successfully! You can now view and test the QR code.`);
+    
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+    loadingToast.textContent = 'Creating table...';
+    document.body.appendChild(loadingToast);
+    
+    try {
+      console.log('Creating table:', { 
+        shop_id: shop.id, 
+        table_number: parseInt(newTable.table_number),
+        label: newTable.label
+      });
+      
+      const newTableData = await TableAPI.create({
+        shop_id: shop.id,
+        table_number: parseInt(newTable.table_number),
+        label: newTable.label || `Table ${newTable.table_number}`,
+        seats: parseInt(newTable.seats) || 2,
+        location: newTable.location,
+        is_active: true,
+      });
+      
+      if (newTableData) {
+        console.log('Table created successfully:', newTableData);
+        loadingToast.textContent = `✓ Table ${newTableData.table_number} created!`;
+        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+        
+        setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
+        setShowAddTable(false);
+        
+        setTimeout(() => {
+          document.body.removeChild(loadingToast);
+          onUpdate();
+        }, 1500);
+      } else {
+        throw new Error('Table creation returned undefined');
+      }
+    } catch (error) {
+      console.error('Error creating table:', error);
+      loadingToast.textContent = '✗ Error creating table';
+      loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+      
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
+    }
   };
-
+  
   const deleteTable = (id: string) => {
-    TableAPI.delete(id);
-    onUpdate();
+    try {
+      TableAPI.delete(id);
+      onUpdate();
+    } catch (error) {
+      console.error('Error deleting table:', error);
+    }
   };
-
   const getQRUrl = (table: Table) => {
-    return `${window.location.origin}${window.location.pathname}#/customer/${shop.id}/${table.id}`;
+    return `${window.location.origin}/#/customer/${shop.id}/${table.id}`;
   };
 
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Tables & QR Codes</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage tables and generate QR codes for each</p>
+          <h1 className="text-3xl font-bold">{t('shop.tablesAndQR')}</h1>
+          <p className="text-gray-400 text-sm mt-1">{t('shop.manageTables')}</p>
         </div>
         <button
           onClick={() => setShowAddTable(true)}
@@ -1271,6 +1414,7 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 // Requests Tab (Live)
 // ==========================================
 function RequestsTab({ shop, pendingRequests, allRequests, onResolve, soundEnabled, onToggleSound }: any) {
+  const { t } = useLanguage();
   const sorted = [...pendingRequests].sort((a: ServiceRequest, b: ServiceRequest) => a.created_at - b.created_at);
 
   return (
@@ -1278,14 +1422,14 @@ function RequestsTab({ shop, pendingRequests, allRequests, onResolve, soundEnabl
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            Live Requests
+            {t('shop.liveRequests')}
             {pendingRequests.length > 0 && (
               <span className="w-8 h-8 bg-red-500 text-white text-sm font-bold rounded-full flex items-center justify-center animate-bounce-gentle">
                 {pendingRequests.length}
               </span>
             )}
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Real-time service requests from customers</p>
+          <p className="text-gray-400 text-sm mt-1">{t('shop.realtimeDesc')}</p>
         </div>
         <button
           onClick={onToggleSound}
