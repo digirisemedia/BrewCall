@@ -1181,7 +1181,7 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
   if (!shop) return null;
 
-  const addTable = () => {
+  const addTable = async () => {
     if (!newTable.table_number) return;
     
     const loadingToast = document.createElement('div');
@@ -1196,7 +1196,7 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
         label: newTable.label
       });
       
-      const newTableData = TableAPI.create({
+      const newTableData = await TableAPI.create({
         shop_id: shop.id,
         table_number: parseInt(newTable.table_number),
         label: newTable.label || `Table ${newTable.table_number}`,
