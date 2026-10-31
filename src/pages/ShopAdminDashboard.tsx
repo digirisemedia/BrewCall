@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, WalletAPI, subscribeToChanges } from '../store';
+import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { useElapsedTime } from '../hooks/useElapsedTime';
 import { playNotificationSound, playSuccessSound, startContinuousAlert, stopContinuousAlert } from '../utils/audio';
@@ -12,7 +12,7 @@ import { CurrencySwitcher } from '../components/CurrencySwitcher';
 import {
   LogOut, LayoutDashboard, Store, UtensilsCrossed, Grid3X3, Bell,
   Plus, Trash2, Edit3, X, Check, QrCode, Eye, EyeOff, Clock, Image,
-  Wallet, TrendingUp, TrendingDown
+  Wallet
 } from 'lucide-react';
 
 type Tab = 'overview' | 'profile' | 'menu' | 'tables' | 'requests';
@@ -344,32 +344,19 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
   const { formatPrice, t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CoffeeShop | null>(null);
-  const [showTopUp, setShowTopUp] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState('');
-  const [transactions, setTransactions] = useState<any[]>([]);
   const [newPayment, setNewPayment] = useState<{ type: 'cash_plus' | 'bank_transfer' | 'credit_card' | 'paypal'; label: string; details: string }>({
     type: 'cash_plus',
     label: '',
     details: '',
   });
 
+  // Initialize form only once when shop is first loaded
   useEffect(() => {
-    if (shop) {
+    if (shop && !form) {
       setForm({ ...shop });
-      loadTransactions();
     }
-  }, [shop]);
-
-  const loadTransactions = async () => {
-    if (!shop) return;
-    try {
-      const txns = await WalletAPI.getTransactions(shop.id);
-      setTransactions(txns);
-    } catch (error) {
-      console.error('Error loading transactions:', error);
-    }
-  };
+  }, [shop, form]);
 
   const handleSave = async () => {
     if (!shop || !form) return;
@@ -416,30 +403,15 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     setEditing(false);
   };
 
-  const handleTopUp = async () => {
-    if (!shop || !topUpAmount) return;
-    const amount = parseFloat(topUpAmount);
-    if (amount <= 0) return;
-    
-    try {
-      const defaultMethod = shop.payment_methods.find(m => m.is_default);
-      await WalletAPI.topUp(shop.id, amount, defaultMethod?.type);
-      setTopUpAmount('');
-      setShowTopUp(false);
-      onUpdate();
-    } catch (error) {
-      console.error('Error topping up:', error);
-      alert('Error adding funds. Please try again.');
-    }
-  };
-
   const handleAddPayment = async () => {
     if (!shop || !newPayment.label) return;
     try {
-      await WalletAPI.addPaymentMethod(shop.id, {
+      const updatedMethods = [...(shop.payment_methods || []), {
+        id: `pm_${Date.now()}`,
         ...newPayment,
         is_default: shop.payment_methods.length === 0,
-      });
+      }];
+      await ShopAPI.update(shop.id, { payment_methods: updatedMethods });
       setNewPayment({ type: 'cash_plus', label: '', details: '' });
       setShowAddPayment(false);
       onUpdate();
@@ -451,8 +423,14 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
 
   const handleRemovePayment = async (methodId: string) => {
     if (!shop) return;
-    await WalletAPI.removePaymentMethod(shop.id, methodId);
-    onUpdate();
+    try {
+      const updatedMethods = (shop.payment_methods || []).filter(m => m.id !== methodId);
+      await ShopAPI.update(shop.id, { payment_methods: updatedMethods });
+      onUpdate();
+    } catch (error) {
+      console.error('Error removing payment method:', error);
+      alert('Error removing payment method. Please try again.');
+    }
   };
 
   if (!shop || !form) return null;
@@ -633,28 +611,13 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           </div>
         </div>
 
-        {/* Wallet & Payment */}
+        {/* Payment Methods */}
         <div className="pt-4 border-t border-white/5">
           <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
             <Wallet className="w-4 h-4 text-emerald-400" />
-            {t('shop.walletPayment')}
+            {t('shop.paymentMethods')}
           </h3>
           
-          {/* Wallet Balance */}
-          <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">{t('shop.currentBalance')}</span>
-              <button
-                onClick={() => setShowTopUp(true)}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
-              >
-                + {t('shop.topUp')}
-              </button>
-            </div>
-            <p className="text-3xl font-bold text-emerald-400">{formatPrice(shop.wallet_balance)}</p>
-          </div>
-
-          {/* Payment Methods */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-gray-400">{t('shop.paymentMethods')}</span>
@@ -696,38 +659,6 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
               )}
             </div>
           </div>
-
-          {/* Recent Transactions */}
-          <div>
-            <span className="text-xs font-medium text-gray-400 mb-3 block">{t('shop.recentTransactions')}</span>
-            <div className="space-y-2">
-              {transactions.slice(0, 5).map((txn) => (
-                <div key={txn.id} className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
-                  <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                    txn.type === 'top_up' ? 'bg-emerald-500/20' : 'bg-red-500/20'
-                  }`}>
-                    {txn.type === 'top_up' ? (
-                      <TrendingUp className="w-3 h-3 text-emerald-400" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 text-red-400" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{txn.description}</p>
-                    <p className="text-[10px] text-gray-500">{new Date(txn.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <span className={`text-xs font-bold ${
-                    txn.type === 'top_up' ? 'text-emerald-400' : 'text-red-400'
-                  }`}>
-                    {txn.type === 'top_up' ? '+' : '-'}{formatPrice(txn.amount)}
-                  </span>
-                </div>
-              ))}
-              {transactions.length === 0 && (
-                <p className="text-xs text-gray-500 text-center py-2">No transactions yet</p>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Subscription */}
@@ -743,53 +674,6 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
           </div>
         </div>
       </div>
-
-      {/* Top-Up Modal */}
-      {showTopUp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowTopUp(false)}>
-          <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">{t('shop.topUp')}</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">{t('shop.amount')} ({t('currency.symbol')})</label>
-                <input
-                  type="number"
-                  value={topUpAmount}
-                  onChange={(e) => setTopUpAmount(e.target.value)}
-                  className="input-dark"
-                  placeholder="100"
-                  min="1"
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[50, 100, 200].map((amount) => (
-                  <button
-                    key={amount}
-                    onClick={() => setTopUpAmount(amount.toString())}
-                    className="py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    {amount} MAD
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowTopUp(false)}
-                  className="flex-1 py-2.5 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  onClick={handleTopUp}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-700 transition-all"
-                >
-                  {t('shop.topUp')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add Payment Method Modal */}
       {showAddPayment && (
