@@ -2,38 +2,17 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// ==========================================
-// Firebase Configuration
-// ==========================================
-// IMPORTANT: Replace these with your Firebase credentials
-// Get them from: https://console.firebase.google.com/
-// ==========================================
-
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyDVqV7bV7iMa8-MH1Ya78unvYbowM1AOys",
+  authDomain: "brewcall-cae74.firebaseapp.com",
+  projectId: "brewcall-cae74",
+  storageBucket: "brewcall-cae74.firebasestorage.app",
+  messagingSenderId: "982822723898",
+  appId: "1:982822723898:web:1401abb67aa6dbc8bd3003",
+  measurementId: "G-96KKX397KG"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Initialize Firebase Authentication
 export const auth = getAuth(app);
-
-// Initialize Firestore Database
 export const db = getFirestore(app);
-
-// Check if Firebase is properly configured
-export const isFirebaseConfigured = (): boolean => {
-  return (
-    firebaseConfig.apiKey !== "YOUR_API_KEY" &&
-    firebaseConfig.projectId !== "YOUR_PROJECT_ID"
-  );
-};
-
 export default app;

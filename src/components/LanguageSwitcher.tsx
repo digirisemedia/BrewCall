@@ -1,18 +1,26 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { languages } from '../i18n/translations';
 
-export function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  variant?: 'dark' | 'light';
+}
+
+export function LanguageSwitcher({ variant = 'dark' }: LanguageSwitcherProps) {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   const currentLang = languages.find((l) => l.code === language);
 
+  const buttonClass = variant === 'light' 
+    ? "flex items-center gap-2 px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition-all text-gray-700"
+    : "flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all";
+
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all"
+        className={buttonClass}
       >
         <span className="text-lg">{currentLang?.flag}</span>
       </button>

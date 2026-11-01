@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { 
   signInWithPopup, 
   GoogleAuthProvider, 
@@ -7,53 +6,100 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   sendEmailVerification,
-  User
+  updateProfile,
+  User as FirebaseUser,
+  signInWithPhoneNumber,
+  RecaptchaVerifier
 } from 'firebase/auth';
-import { auth } from './config';
+import { auth, db } from './config';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-export function useFirebaseAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+// Google Sign-In
+export const signInWithGoogle = async (): Promise<FirebaseUser> => {
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  return result.user;
+};
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return unsubscribe;
-  }, []);
+// Email/Password Sign-In
+export const signInWithEmail = async (email: string, password: string): Promise<FirebaseUser> => {
+  const result = await signInWithEmailAndPassword(auth, email, password);
+  return result.user;
+};
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
-  };
+// Email/Password Sign-Up
+export const signUpWithEmail = async (
+  email: string, 
+  password: string, 
+  displayName: string
+): Promise<FirebaseUser> => {
+  const result = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(result.user, { displayName });
+  await sendEmailVerification(result.user);
+  return result.user;
+};
 
-  const signInWithEmail = async (email: string, password: string) => {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    if (!result.user.emailVerified) {
-      throw new Error('Please verify your email before signing in');
+// Phone Sign-In (requires Recaptcha)
+export const setupRecaptcha = (containerId: string): RecaptchaVerifier => {
+  const recaptcha = new RecaptchaVerifier(auth, containerId, {
+    size: 'invisible',
+    callback: () => {
+      console.log('reCAPTCHA solved');
+    },
+    'expired-callback': () => {
+      console.log('reCAPTCHA expired');
     }
-    return result.user;
-  };
+  });
+  return recaptcha;
+};
 
-  const signUpWithEmail = async (email: string, password: string, displayName: string) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    await result.user.updateProfile({ displayName });
-    await sendEmailVerification(result.user);
-    return result.user;
-  };
+export const signInWithPhone = async (
+  phoneNumber: string,
+  recaptchaVerifier: RecaptchaVerifier
+): Promise<string> => {
+  const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+  return confirmationResult.verificationId;
+};
 
-  const signOut = async () => {
-    await firebaseSignOut(auth);
-  };
+export const verifyPhoneCode = async (
+  verificationId: string,
+  code: string
+): Promise<FirebaseUser> => {
+  const credential = await (auth as any).signInWithCredential(
+    (auth as any).PhoneAuthProvider.credential(verificationId, code)
+  );
+  return credential.user;
+};
 
-  return {
-    user,
-    loading,
-    signInWithGoogle,
-    signInWithEmail,
-    signUpWithEmail,
-    signOut
-  };
-}
+// Sign Out
+export const signOut = async (): Promise<void> => {
+  await firebaseSignOut(auth);
+};
+
+// Auth State Observer
+export const observeAuthState = (callback: (user: FirebaseUser | null) => void) => {
+  return onAuthStateChanged(auth, callback);
+};
+
+// Create or get user document in Firestore
+export const createOrGetUserDoc = async (firebaseUser: FirebaseUser, shopName?: string) => {
+  const userDocRef = doc(db, 'users', firebaseUser.uid);
+  const userDoc = await getDoc(userDocRef);
+  
+  if (!userDoc.exists()) {
+    // Create new user document
+    const userData = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+      photoURL: firebaseUser.photoURL || '',
+      role: 'shop_admin',
+      shop_id: null,
+      created_at: Date.now(),
+    };
+    await setDoc(userDocRef, userData);
+    return userData;
+  }
+  
+  return userDoc.data();
+};

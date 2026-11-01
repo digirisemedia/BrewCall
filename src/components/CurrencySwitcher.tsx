@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useCurrency } from '../context/CurrencyContext';
 import { currencyList, CurrencyCode } from '../utils/currency';
 
