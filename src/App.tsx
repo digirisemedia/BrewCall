@@ -1,13 +1,17 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CurrencyProvider } from './context/CurrencyContext';
+import { LanguageProvider } from './context/LanguageContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import Dashboard from './pages/Dashboard';
+import ShopAdminDashboard from './pages/ShopAdminDashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import CustomerView from './pages/CustomerView';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="text-center">
@@ -22,24 +26,34 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminDashboard() {
+  const { user } = useAuth();
+  return user?.role === 'super_admin' ? <SuperAdminDashboard /> : <ShopAdminDashboard />;
+}
+
 function App() {
   return (
     <AuthProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </HashRouter>
+      <LanguageProvider>
+        <CurrencyProvider>
+          <HashRouter>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/customer/:shopId/:tableId" element={<CustomerView />} />
+              <Route path="/" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </HashRouter>
+        </CurrencyProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }
