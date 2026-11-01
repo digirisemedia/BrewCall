@@ -317,6 +317,15 @@ export const CategoryAPI = {
     }
   },
 
+  async update(id: string, data: Partial<MenuCategory>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'categories', id), toFirestore(data));
+    } catch (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+  },
+
   async delete(id: string): Promise<void> {
     try {
       await deleteDoc(doc(db, 'categories', id));
@@ -413,6 +422,15 @@ export const TableAPI = {
       return newTable;
     } catch (error) {
       console.error('Error creating table:', error);
+      throw error;
+    }
+  },
+
+  async update(id: string, data: Partial<Table>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'tables', id), toFirestore(data));
+    } catch (error) {
+      console.error('Error updating table:', error);
       throw error;
     }
   },

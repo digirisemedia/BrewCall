@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI, subscribeToChanges } from '../store';
+import { ShopAPI, CategoryAPI, ItemAPI, TableAPI, RequestAPI } from '../store';
 import { CoffeeShop, MenuCategory, MenuItem, Table, ServiceRequest } from '../types';
 import { useElapsedTime } from '../hooks/useElapsedTime';
 import { playNotificationSound, playSuccessSound, startContinuousAlert, stopContinuousAlert } from '../utils/audio';
@@ -29,43 +29,49 @@ export default function ShopAdminDashboard() {
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [pendingRequests, setPendingRequests] = useState<ServiceRequest[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const prevPendingCount = useState(0);
+  const prevPendingCount = useRef(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Guard against overlapping/persistent polling calls
+  const isPollingRef = useRef(false);
+
   useEffect(() => {
+    let cancelled = false;
+
     const init = async () => {
       setLoading(true);
       setError(null);
-      
+
       if (!user?.shop_id) {
         console.error('No shop_id found for user:', user);
         setError('No shop found for your account. Please create a shop or contact support.');
         setLoading(false);
         return;
       }
-      
+
       try {
         await loadData();
       } catch (err) {
         console.error('Failed to load data:', err);
-        setError('Failed to load data. Please refresh the page.');
+        if (!cancelled) setError('Failed to load data. Please refresh the page.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    
-    init();
-    const interval = setInterval(loadData, 3000); // Poll every 3 seconds for real-time updates
-    return () => clearInterval(interval);
-  }, [user?.shop_id]);
 
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.shop_id]);
+  
   useEffect(() => {
-    if (pendingRequests.length > prevPendingCount[0] && soundEnabled && activeTab === 'requests') {
+    if (pendingRequests.length > prevPendingCount.current && soundEnabled && activeTab === 'requests') {
       playNotificationSound();
     }
-    prevPendingCount[1](pendingRequests.length);
+    prevPendingCount.current = pendingRequests.length;
     
     // Start continuous alert when there are pending requests
     if (pendingRequests.length > 0 && soundEnabled) {
@@ -85,52 +91,51 @@ export default function ShopAdminDashboard() {
     };
   }, [activeTab]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user?.shop_id) {
       console.warn('No shop_id found for user');
       return;
     }
-    
+    // Skip if a previous refresh is still in flight (prevents overlapping calls)
+    if (isPollingRef.current) return;
+    isPollingRef.current = true;
+
+    const shopId = user.shop_id;
     try {
-      console.log('Loading data for shop:', user.shop_id);
-      
-      const s = await ShopAPI.getById(user.shop_id);
-      console.log('Shop loaded:', s);
-      
+      const s = await ShopAPI.getById(shopId);
+
       if (!s) {
-        console.error('Shop not found in Firestore for ID:', user.shop_id);
+        console.error('Shop not found in Firestore for ID:', shopId);
         setError('Shop not found in database. Please contact support.');
         return;
       }
-      
+
       setShop(s);
-      
-      const cats = await CategoryAPI.getByShop(user.shop_id);
-      console.log('Categories loaded:', cats.length);
-      setCategories(cats);
-      
-      const its = await ItemAPI.getByShop(user.shop_id);
-      console.log('Items loaded:', its.length);
-      setItems(its);
-      
-      const tbls = await TableAPI.getByShop(user.shop_id);
-      console.log('Tables loaded:', tbls.length);
-      setTables(tbls);
-      
-      const reqs = await RequestAPI.getByShop(user.shop_id);
-      console.log('Requests loaded:', reqs.length);
-      setRequests(reqs);
-      
-      const pending = await RequestAPI.getPendingByShop(user.shop_id);
-      console.log('Pending requests:', pending.length);
-      setPendingRequests(pending);
-      
-      console.log('All data loaded successfully for shop:', user.shop_id);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      throw error;
+
+      const [cats, its, tbls, reqs, pending] = await Promise.all([
+        CategoryAPI.getByShop(shopId),
+        ItemAPI.getByShop(shopId),
+        TableAPI.getByShop(shopId),
+        RequestAPI.getByShop(shopId),
+        RequestAPI.getPendingByShop(shopId),
+      ]);
+
+      // Only apply results if the user/shop hasn't changed while fetching
+      if (user?.shop_id === shopId) {
+        setCategories(cats);
+        setItems(its);
+        setTables(tbls);
+        setRequests(reqs);
+        setPendingRequests(pending);
+      }
+    } catch (err) {
+      console.error('Error loading data:', err);
+      throw err;
+    } finally {
+      isPollingRef.current = false;
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.shop_id]);
 
   const tabs = [
     { id: 'overview' as Tab, label: t('shop.overview'), icon: LayoutDashboard },
@@ -288,15 +293,18 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
   const [stats, setStats] = useState({ pending: 0, today: 0, total: 0, resolved: 0 });
   
   useEffect(() => {
+    let cancelled = false;
     const loadStats = async () => {
       if (shop) {
-        const s = await RequestAPI.getStats(shop.id);
-        setStats(s);
+        try {
+          const s = await RequestAPI.getStats(shop.id);
+          if (!cancelled) setStats(s);
+        } catch (err) {
+          console.error('Error loading stats:', err);
+        }
       }
     };
     loadStats();
-    const interval = setInterval(loadStats, 2000);
-    return () => clearInterval(interval);
   }, [shop]);
 
   return (
@@ -358,7 +366,7 @@ function OverviewTab({ shop, categories, items, tables, requests, pendingRequest
 // Profile Tab
 // ==========================================
 function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () => void }) {
-  const { formatPrice, t } = useLanguage();
+  const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CoffeeShop | null>(null);
   const [showAddPayment, setShowAddPayment] = useState(false);
@@ -368,55 +376,56 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     details: '',
   });
 
-  // Initialize form only once when shop is first loaded
+  // Initialize the form once when entering edit mode (from the latest shop data).
+  // While editing we never overwrite it — otherwise every re-render/poll would
+  // reset the inputs and erase whatever the user is typing.
   useEffect(() => {
-    if (shop && !form) {
-      setForm({ ...shop });
+    if (editing && shop) {
+      setForm((prev) => prev ?? { ...shop });
     }
-  }, [shop, form]);
+    if (!editing && !shop) {
+      setForm(null);
+    }
+  }, [editing, shop]);
 
   const handleSave = async () => {
     if (!shop || !form) return;
-    
+
     const loadingToast = document.createElement('div');
     loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
     loadingToast.textContent = 'Saving changes...';
     document.body.appendChild(loadingToast);
-    
+
     try {
-      console.log('Starting save operation for shop:', shop.id);
-      console.log('Data to save:', form);
-      
-      const result = await ShopAPI.update(shop.id, form);
-      
-      if (result) {
-        console.log('Save successful, updated shop:', result);
-        loadingToast.textContent = '✓ Changes saved successfully!';
-        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-        
-        setTimeout(() => {
-          document.body.removeChild(loadingToast);
-          setEditing(false);
-          onUpdate();
-        }, 1500);
-      } else {
-        throw new Error('Update returned undefined');
-      }
+      // Don't persist id / created_at inside the document body itself
+      const { id: _id, created_at: _created, ...payload } = form;
+
+      const result = await ShopAPI.update(shop.id, payload as Partial<CoffeeShop>);
+
+      // Leave edit mode immediately and refresh from the source of truth
+      setEditing(false);
+      setForm(null);
+      onUpdate();
+
+      loadingToast.textContent = result ? '✓ Changes saved successfully!' : '✗ Error saving changes. Please try again.';
+      loadingToast.className = `fixed top-4 right-4 ${result ? 'bg-emerald-500' : 'bg-red-500'} text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in`;
+
+      setTimeout(() => {
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
+      }, 1500);
     } catch (error) {
       console.error('Error saving shop:', error);
       loadingToast.textContent = '✗ Error saving changes. Please try again.';
       loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-      
+
       setTimeout(() => {
-        document.body.removeChild(loadingToast);
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
       }, 3000);
     }
   };
 
   const handleCancel = () => {
-    if (shop) {
-      setForm({ ...shop });
-    }
+    setForm(null);
     setEditing(false);
   };
 
@@ -450,7 +459,25 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
     }
   };
 
-  if (!shop || !form) return null;
+  if (!shop) return null;
+
+  // Not in edit mode -> nothing to show from the draft form yet
+  if (!form) {
+    return (
+      <div className="animate-fade-in max-w-2xl">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">{t('shop.shopProfile')}</h1>
+            <p className="text-gray-400 text-sm mt-1">{t('shop.manageInfo')}</p>
+          </div>
+          <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-colors">
+            <Edit3 className="w-4 h-4" /> {t('common.edit')}
+          </button>
+        </div>
+        <div className="glass rounded-2xl p-6 text-center text-gray-500 text-sm">Loading profile…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in max-w-2xl">
@@ -755,7 +782,8 @@ function ProfileTab({ shop, onUpdate }: { shop: CoffeeShop | null; onUpdate: () 
 // Menu Tab
 // ==========================================
 function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | null; categories: MenuCategory[]; items: MenuItem[]; onUpdate: () => void }) {
-  const { t, formatPrice } = useLanguage();
+  const { t } = useLanguage();
+  const { formatPrice } = useCurrency();
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -805,62 +833,49 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
 
   const categoryItems = items.filter((i) => i.category_id === selectedCategory);
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCatName) return;
-    
+
     const loadingToast = document.createElement('div');
     loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
     loadingToast.textContent = 'Creating category...';
     document.body.appendChild(loadingToast);
-    
+
     try {
-      console.log('Creating category:', { shop_id: shop.id, name: newCatName, icon: newCatIcon });
-      const result = CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
-      
-      if (result) {
-        console.log('Category created successfully:', result);
-        loadingToast.textContent = '✓ Category created!';
-        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-        
-        setNewCatName('');
-        setNewCatIcon('☕');
-        setShowAddCategory(false);
-        
-        setTimeout(() => {
-          document.body.removeChild(loadingToast);
-          onUpdate();
-        }, 1500);
-      } else {
-        throw new Error('Category creation returned undefined');
-      }
+      await CategoryAPI.create({ shop_id: shop.id, name: newCatName, icon: newCatIcon, order: categories.length + 1, is_active: true });
+
+      loadingToast.textContent = '✓ Category created!';
+      loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+
+      setNewCatName('');
+      setNewCatIcon('☕');
+      setShowAddCategory(false);
+      onUpdate();
+
+      setTimeout(() => {
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
+      }, 1500);
     } catch (error) {
       console.error('Error creating category:', error);
       loadingToast.textContent = '✗ Error creating category';
       loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-      
+
       setTimeout(() => {
-        document.body.removeChild(loadingToast);
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
       }, 3000);
     }
   };
 
-  const addItem = () => {
+  const addItem = async () => {
     if (!newItem.name || !newItem.price || !selectedCategory) return;
-    
+
     const loadingToast = document.createElement('div');
     loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
     loadingToast.textContent = 'Creating item...';
     document.body.appendChild(loadingToast);
-    
+
     try {
-      console.log('Creating item:', { 
-        shop_id: shop.id, 
-        category_id: selectedCategory, 
-        name: newItem.name,
-        price: parseFloat(newItem.price)
-      });
-      
-      const result = ItemAPI.create({
+      await ItemAPI.create({
         shop_id: shop.id,
         category_id: selectedCategory,
         name: newItem.name,
@@ -871,37 +886,32 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
         is_available: true,
         is_popular: newItem.is_popular,
       });
-      
-      if (result) {
-        console.log('Item created successfully:', result);
-        loadingToast.textContent = '✓ Item created!';
-        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-        
-        setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
-        setImagePreview('');
-        setShowAddItem(false);
-        
-        setTimeout(() => {
-          document.body.removeChild(loadingToast);
-          onUpdate();
-        }, 1500);
-      } else {
-        throw new Error('Item creation returned undefined');
-      }
+
+      loadingToast.textContent = '✓ Item created!';
+      loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+
+      setNewItem({ name: '', description: '', price: '', image_emoji: '☕', image_url: '', is_popular: false });
+      setImagePreview('');
+      setShowAddItem(false);
+      onUpdate();
+
+      setTimeout(() => {
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
+      }, 1500);
     } catch (error) {
       console.error('Error creating item:', error);
       loadingToast.textContent = '✗ Error creating item';
       loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-      
+
       setTimeout(() => {
-        document.body.removeChild(loadingToast);
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
       }, 3000);
     }
   };
 
-  const toggleItemAvailability = (itemId: string, current: boolean) => {
+  const toggleItemAvailability = async (itemId: string, current: boolean) => {
     try {
-      ItemAPI.update(itemId, { is_available: !current });
+      await ItemAPI.update(itemId, { is_available: !current });
       onUpdate();
     } catch (error) {
       console.error('Error updating item:', error);
@@ -909,9 +919,9 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
     }
   };
   
-  const deleteItem = (itemId: string) => {
+  const deleteItem = async (itemId: string) => {
     try {
-      ItemAPI.delete(itemId);
+      await ItemAPI.delete(itemId);
       onUpdate();
     } catch (error) {
       console.error('Error deleting item:', error);
@@ -919,9 +929,9 @@ function MenuTab({ shop, categories, items, onUpdate }: { shop: CoffeeShop | nul
     }
   };
   
-  const deleteCategory = (catId: string) => {
+  const deleteCategory = async (catId: string) => {
     try {
-      CategoryAPI.delete(catId);
+      await CategoryAPI.delete(catId);
       if (selectedCategory === catId && categories.length > 1) {
         setSelectedCategory(categories.find((c) => c.id !== catId)?.id || '');
       }
@@ -1200,20 +1210,14 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
 
   const addTable = async () => {
     if (!newTable.table_number) return;
-    
+
     const loadingToast = document.createElement('div');
     loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
     loadingToast.textContent = 'Creating table...';
     document.body.appendChild(loadingToast);
-    
+
     try {
-      console.log('Creating table:', { 
-        shop_id: shop.id, 
-        table_number: parseInt(newTable.table_number),
-        label: newTable.label
-      });
-      
-      const newTableData = await TableAPI.create({
+      const created = await TableAPI.create({
         shop_id: shop.id,
         table_number: parseInt(newTable.table_number),
         label: newTable.label || `Table ${newTable.table_number}`,
@@ -1221,36 +1225,31 @@ function TablesTab({ shop, tables, onUpdate }: { shop: CoffeeShop | null; tables
         location: newTable.location,
         is_active: true,
       });
-      
-      if (newTableData) {
-        console.log('Table created successfully:', newTableData);
-        loadingToast.textContent = `✓ Table ${newTableData.table_number} created!`;
-        loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-        
-        setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
-        setShowAddTable(false);
-        
-        setTimeout(() => {
-          document.body.removeChild(loadingToast);
-          onUpdate();
-        }, 1500);
-      } else {
-        throw new Error('Table creation returned undefined');
-      }
+
+      loadingToast.textContent = `✓ Table ${created.table_number} created!`;
+      loadingToast.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
+
+      setNewTable({ table_number: '', label: '', seats: '2', location: 'Indoor' });
+      setShowAddTable(false);
+      onUpdate();
+
+      setTimeout(() => {
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
+      }, 1500);
     } catch (error) {
       console.error('Error creating table:', error);
       loadingToast.textContent = '✗ Error creating table';
       loadingToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-fade-in';
-      
+
       setTimeout(() => {
-        document.body.removeChild(loadingToast);
+        if (loadingToast.parentNode) document.body.removeChild(loadingToast);
       }, 3000);
     }
   };
-  
-  const deleteTable = (id: string) => {
+
+  const deleteTable = async (id: string) => {
     try {
-      TableAPI.delete(id);
+      await TableAPI.delete(id);
       onUpdate();
     } catch (error) {
       console.error('Error deleting table:', error);
